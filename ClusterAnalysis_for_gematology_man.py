@@ -7,6 +7,7 @@ from enum import Enum
 import webcolors as wc
 import skfuzzy as fuzz
 from sklearn.model_selection import train_test_split
+from sklearn.cluster import KMeans
 
 class Feature(Enum):
     MCH = 1
@@ -89,23 +90,37 @@ class ClusterAnalysis:
         self.data = self.df_male
        
 
-        self.split_on_train_and_test_datasets()
+        self.train_data, self.test_data = self.split_on_train_and_test_datasets(self.data)
         
         # Separating out the features
-        self.Features = self.train_data.loc[:, features]
-        print(self.Features)
+        self.train_features = self.train_data.loc[:, features]
+        print(self.train_features)
+
+        self.scale()
 
         # Separating out the ages
         self.Ages = self.train_data.loc[:,['Age']]
         print(self.Ages)
 
+        self.cluster_labels = [0]*len(self.train_features)
+        print(len(self.train_features))
+        print(self.cluster_labels)
+
+
+    def scale (self):
         
-    def split_on_train_and_test_datasets(self):
+        # Scaling
+
+        std_scaler = StandardScaler()
+        self.train_features_scaled = std_scaler.fit_transform(self.train_features.values)
+        
+        
+    def split_on_train_and_test_datasets(self, dataframe):
 
         # Разбиваем на возрастные бины
         bins = [20, 30, 40, 50, 60, 70, 80, 90]
         labels = ['20-30', '30-40', '40-50', '50-60', '60-70', '70-80', '80-90']
-        self.data['AgeBin'] = pd.cut(self.data['Age'], bins=bins, labels=labels)
+        dataframe['AgeBin'] = pd.cut(dataframe['Age'], bins=bins, labels=labels)
 
        
         # Пустые DataFrame'ы для тренировочной и тестовой выборки
@@ -118,8 +133,11 @@ class ClusterAnalysis:
 
             # Пропорциональный размер тестового набора зависит от количества данных в бине
             if len(bin_data) > 1:  # Проверяем, что есть больше одного элемента для разделения
+                #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 test_size = min(0.3, 1 / len(bin_data))  # Чем меньше данных, тем меньший тестовый набор
                 print(test_size)
+
+                #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 train_bin, test_bin = train_test_split(bin_data, test_size=test_size, random_state=42)
             
                 train_data = pd.concat([train_data, train_bin], axis=0)
@@ -127,17 +145,18 @@ class ClusterAnalysis:
            
 
         # Сбрасываем индексы
-        self.train_data = train_data.reset_index(drop=True)
-        self.test_data = test_data.reset_index(drop=True)
+        train_data = train_data.reset_index(drop=True)
+        test_data = test_data.reset_index(drop=True)
 
         print("Training data:")
         print(train_data)
         print("\nTest data:")
         print(test_data)
 
+        return train_data, test_data
         #print(self.data['AgeBin'])
 
-        #X_train, X_test, y_train, y_test = train_test_split(self.Features, self.Ages.iloc[:,0],
+        #X_train, X_test, y_train, y_test = train_test_split(self.train_features, self.Ages.iloc[:,0],
         #                                                    test_size=0.2, random_state=42, stratify=self.Ages.iloc[:,0])
         #print(X_train)
 
@@ -162,21 +181,16 @@ class ClusterAnalysis:
         # Add normalisation for biomarkers !!!!!!!!!!!!!!!!!!!!!!
         min_dist = 100000000000
         min_index = 0
-        for index, row in self.Features.iterrows():
+        for index, row in self.train_features.iterrows():
             dist = np.linalg.norm(row-analysis)
             if dist < min_dist:
                 min_dist = dist
                 min_index = index
 
         print(self.Ages.values[min_index])
-    def scale (self):
-        
-        # Scaling
 
-        std_scaler = StandardScaler()
-        self.scaled_df = std_scaler.fit_transform(self.Features.values)
         
-        print(self.scaled_df)
+   
 
 
         
@@ -274,6 +288,11 @@ class ClusterAnalysis:
 
         print(pca.explained_variance_ratio_)
 
+
+
+
+        
+
     def plot_pca_cumulative(self):
         # Principal component analisys for 3 components
 
@@ -303,45 +322,54 @@ class ClusterAnalysis:
     
 
 
-    def kmeans_clustering(self):
+    def kmeans_clustering(self, clusters_number):
 
-
-        from sklearn.cluster import KMeans
-
-        x = [4, 5, 10, 4, 3, 11, 14 , 6, 10, 12]
-        y = [21, 19, 24, 17, 16, 25, 24, 22, 21, 21]
-        data = self.Features
+        #x = [4, 5, 10, 4, 3, 11, 14 , 6, 10, 12]
+        #y = [21, 19, 24, 17, 16, 25, 24, 22, 21, 21]
         #data = list(zip(x, y))
-        print(data)
-        kmeans = KMeans(n_clusters=5)
+        
+        data = self.train_features
+         
+        kmeans = KMeans(n_clusters=clusters_number)
         kmeans.fit(data)
 
-        print (kmeans.labels_)
+       
+
+        self.cluster_labels = kmeans.labels_
+
+        #indexes = self.clusters_patient_indexes(kmeans.labels_)
+        #self.clusters_bio_age(self.Ages, indexes)
 
         
 
+    def clusters_patient_indexes (self, labels):
         
-
-        # Mean ariphmetic by each cluster bio age
-        clusters_pacient_indexes = {}
-        for i in range(len(kmeans.labels_)):
-            label = kmeans.labels_[i]
-            if label in clusters_pacient_indexes.keys():
-                clusters_pacient_indexes[label].append(i)
+        clusters_patient_indexes = {}
+        for i in range(len(labels)):
+            label = labels[i]
+            if label in clusters_patient_indexes.keys():
+                clusters_patient_indexes[label].append(i)
             else:
-                clusters_pacient_indexes[label] = [i]
+                clusters_patient_indexes[label] = [i]
 
+        return clusters_patient_indexes
+
+
+    def clusters_bio_age(self, train_ages_dataframe, cl_pat_indexes):
+        
+        # Mean ariphmetic by each cluster bio age
+        
         clusters_bio_age = {}
         
-        for cluster_number in clusters_pacient_indexes.keys():
+        for cluster_number in cl_pat_indexes.keys():
 
             summ = 0
 
-            for pacient_index in clusters_pacient_indexes[cluster_number]:
+            for pacient_index in cl_pat_indexes[cluster_number]:
 
-                summ += self.Ages[pacient_index]
+                summ += train_ages_dataframe[pacient_index]
 
-            summ = summ / len( clusters_pacient_indexes[cluster_number])
+            summ = summ / len( cl_pat_indexes[cluster_number])
 
             clusters_bio_age[cluster_number] = summ
 
@@ -435,8 +463,10 @@ if __name__ == '__main__':
     ClAnalysis.ages_distribution()
   
     ClAnalysis.scale()
-    ClAnalysis.kmeans_clustering()
-    ClAnalysis.plot_pca()
+    print(ClAnalysis.train_features_scaled)
+    ClAnalysis.kmeans_clustering(5)
+    print(ClAnalysis.cluster_labels)
+    #ClAnalysis.plot_pca()
     #ClAnalysis.kmeans_clustering()
     
     #ClAnalysis.biological_age((24.1, 391, 78, 9.7, 14.4, 15.7, 0.45, 149, 66.4,	5.13, 8, 29.9, 3.7, 0.218, 226, 5))
