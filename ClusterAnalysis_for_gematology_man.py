@@ -9,6 +9,8 @@ import skfuzzy as fuzz
 from sklearn.model_selection import train_test_split
 from sklearn.cluster import KMeans
 
+
+
 class Feature(Enum):
     MCH = 1
     MCHC = 2
@@ -85,7 +87,7 @@ class ClusterAnalysis:
             'Thrombocytes',
             'ESR']
 
-        features = features1
+        features = features2
 
         self.data = self.df_male
        
@@ -166,11 +168,24 @@ class ClusterAnalysis:
     def ages_distribution(self):
 
         # Припустимо, що у вас є колонка 'Age' з віковими даними
-        self.data['Age'].hist(bins=10)
+        n, bins, patches = plt.hist(self.data['Age'], bins=10)
         plt.title('Розподіл вікових груп')
         plt.xlabel('Вік')
         plt.ylabel('Кількість')
+        # Додаємо сітку по границям бінів
+        plt.grid(True, which='both', axis='x')
+        
+        plt.xticks(bins)  # Встановлюємо мітки по границям бінів
+
         plt.show()
+
+
+        # Створюємо гістограму та отримуємо дані про бінінг
+
+
+
+
+
 
         # !!! Треба по групам, а не просто по вікам.
         age_distribution = self.data['Age'].value_counts()
@@ -199,7 +214,7 @@ class ClusterAnalysis:
       
         # Principal component analisys for 3 components
         pca = PCA(n_components=3)
-        principalComponents = pca.fit_transform(self.scaled_df)
+        principalComponents = pca.fit_transform(self.train_features_scaled)
 
         # Create dataframe with principal components
         principalDf = pd.DataFrame(data = principalComponents
@@ -317,32 +332,45 @@ class ClusterAnalysis:
         plt.show()
 
 
+    def kmeans_clustering_factory(self):
 
+        data = self.train_features
+        
+        labels = self.kmeans_clustering(data, 5)
+        indexes = self.clusters_patient_indexes(labels)
+        self.plot_pca(5, labels)
+        clusters_bio_age = self.clusters_bio_age(self.Ages, indexes)
+        print(clusters_bio_age)
+        print(indexes)
+        print(clusters_bio_age)
 
-    
+    def kmeans_clustering(self, data, clusters_number):
 
+        """ Kmeans clusterning
 
-    def kmeans_clustering(self, clusters_number):
-
+            input: clusters_number
+                    features dataframe
+            output: clusters_labels
+            
+        """
         #x = [4, 5, 10, 4, 3, 11, 14 , 6, 10, 12]
         #y = [21, 19, 24, 17, 16, 25, 24, 22, 21, 21]
         #data = list(zip(x, y))
-        
-        data = self.train_features
          
         kmeans = KMeans(n_clusters=clusters_number)
         kmeans.fit(data)
 
-       
-
-        self.cluster_labels = kmeans.labels_
+        return kmeans.labels_
 
         #indexes = self.clusters_patient_indexes(kmeans.labels_)
         #self.clusters_bio_age(self.Ages, indexes)
 
-        
+        #plt.scatter(self.data['MCH'], self.df_male['MCHC'], c=kmeans.labels_)
+        #plt.show()
 
     def clusters_patient_indexes (self, labels):
+
+        """ Find list of patient indexes for each cluster """
         
         clusters_patient_indexes = {}
         for i in range(len(labels)):
@@ -352,12 +380,13 @@ class ClusterAnalysis:
             else:
                 clusters_patient_indexes[label] = [i]
 
+
         return clusters_patient_indexes
 
 
     def clusters_bio_age(self, train_ages_dataframe, cl_pat_indexes):
         
-        # Mean ariphmetic by each cluster bio age
+        """ Mean ariphmetic by each cluster bio age """
         
         clusters_bio_age = {}
         
@@ -367,20 +396,21 @@ class ClusterAnalysis:
 
             for pacient_index in cl_pat_indexes[cluster_number]:
 
-                summ += train_ages_dataframe[pacient_index]
+                summ += train_ages_dataframe['Age'].values[pacient_index]
 
             summ = summ / len( cl_pat_indexes[cluster_number])
 
             clusters_bio_age[cluster_number] = summ
 
-        print(clusters_bio_age)
+
+        return clusters_bio_age
+       
             
       
-        print(self.Ages.values)
+       
         
-        self.plot_pca(2, kmeans.labels_)
-        #plt.scatter(self.data['MCH'], self.df_male['MCHC'], c=kmeans.labels_)
-        #plt.show()
+       
+     
 
 
     def cmeans_clustering(self):
@@ -430,6 +460,65 @@ class ClusterAnalysis:
         self.plot_pca(classes_number, clusters)
         #plt.scatter(self.data['MCH'], self.data['MCHC'], c=kmeans.labels_)
         #plt.show()
+
+
+    def minimal_spanning_tree_clustering(self):
+
+        
+        import seaborn as sns; sns.set()
+
+        # matplotlib 1.4 + numpy 1.10 produces warnings; we'll filter these
+        import warnings; warnings.filterwarnings('ignore', message='elementwise')
+
+        def plot_mst(model, cmap='rainbow'):
+           
+            """Utility code to visualize a minimum spanning tree"""
+            X = model.X_fit_
+            fig, ax = plt.subplots(1, 2, figsize=(16, 6), sharex=True, sharey=True)
+            for axi, full_graph, colors in zip(ax, [True, False], ['lightblue', model.labels_]):
+                segments = model.get_graph_segments(full_graph=full_graph)
+                axi.plot(segments[0], segments[1], '-k', zorder=1, lw=1)
+                axi.scatter(X[:, 0], X[:, 1], c=colors, cmap=cmap, zorder=2)
+                axi.axis('tight')
+                
+            
+            ax[0].set_title('Full Minimum Spanning Tree', size=16)
+            ax[1].set_title('Trimmed Minimum Spanning Tree', size=16);
+            plt.show()
+
+        from sklearn.datasets import make_blobs
+        X, y = make_blobs(200, centers=4, random_state=42)
+        plt.scatter(X[:, 0], X[:, 1], c='lightblue');
+        plt.show()
+
+        from mst_clustering import MSTClustering
+        model = MSTClustering(cutoff_scale=2, approximate=False)
+        labels = model.fit_predict(X)
+        plt.scatter(X[:, 0], X[:, 1], c=labels, cmap='rainbow');
+        plt.show()
+
+        plot_mst(model)
+        
+        """
+        from mst_clustering import MSTClustering
+        from sklearn.datasets import make_blobs
+      
+
+        
+        # create some data with four clusters
+        X, y = make_blobs(200, centers=4, random_state=42)
+        
+        # predict the labels with the MST algorithm
+        model = MSTClustering(cutoff_scale=2)
+        labels = model.fit_predict(X)
+        print(labels)
+        
+        # plot the results
+        plt.scatter(X[:, 0], X[:, 1], c=labels, cmap='rainbow')
+        plt.show()
+        """
+        
+        
     
 if __name__ == '__main__':
     """
@@ -460,12 +549,13 @@ if __name__ == '__main__':
     
 
     ClAnalysis = ClusterAnalysis(r'datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx', 'Male')
-    ClAnalysis.ages_distribution()
+    #ClAnalysis.ages_distribution()
   
-    ClAnalysis.scale()
-    print(ClAnalysis.train_features_scaled)
-    ClAnalysis.kmeans_clustering(5)
-    print(ClAnalysis.cluster_labels)
+    #ClAnalysis.scale()
+    #print(ClAnalysis.train_features_scaled)
+    #ClAnalysis.kmeans_clustering_factory()
+    ClAnalysis.minimal_spanning_tree_clustering()
+  
     #ClAnalysis.plot_pca()
     #ClAnalysis.kmeans_clustering()
     
