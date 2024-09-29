@@ -8,6 +8,7 @@ import webcolors as wc
 import skfuzzy as fuzz
 from sklearn.model_selection import train_test_split
 from sklearn.cluster import KMeans
+from mpl_toolkits.mplot3d import Axes3D
 
 
 
@@ -87,7 +88,7 @@ class ClusterAnalysis:
             'Thrombocytes',
             'ESR']
 
-        features = features2
+        features = features1
 
         self.data = self.df_male
        
@@ -477,6 +478,7 @@ class ClusterAnalysis:
             fig, ax = plt.subplots(1, 2, figsize=(16, 6), sharex=True, sharey=True)
             for axi, full_graph, colors in zip(ax, [True, False], ['lightblue', model.labels_]):
                 segments = model.get_graph_segments(full_graph=full_graph)
+                print(segments)
                 axi.plot(segments[0], segments[1], '-k', zorder=1, lw=1)
                 axi.scatter(X[:, 0], X[:, 1], c=colors, cmap=cmap, zorder=2)
                 axi.axis('tight')
@@ -487,21 +489,88 @@ class ClusterAnalysis:
             plt.show()
 
         from sklearn.datasets import make_blobs
-        X, y = make_blobs(200, centers=4, random_state=42)
-        plt.scatter(X[:, 0], X[:, 1], c='lightblue');
-        plt.show()
-
-        from mst_clustering import MSTClustering
-        model = MSTClustering(cutoff_scale=2, approximate=False)
-        labels = model.fit_predict(X)
-        plt.scatter(X[:, 0], X[:, 1], c=labels, cmap='rainbow');
-        plt.show()
-
-        plot_mst(model)
         
-        """
+        #X, y = make_blobs(200, centers=4, random_state=42)
+        #X, y = make_blobs(n_samples=200, centers=4, n_features=16 ,
+        #          random_state=42)
+        #self.plot_pca(0, [0])
+        
+        
+        #plt.scatter(X[:, 0], X[:, 1], c='lightblue');
+        #plt.show()
+
         from mst_clustering import MSTClustering
-        from sklearn.datasets import make_blobs
+        model = MSTClustering(cutoff_scale=7, approximate=False)
+        #labels = model.fit_predict(X)
+        labels = model.fit_predict(self.train_features_scaled)
+        
+        #plt.scatter(X[:, 0], X[:, 1], c=labels, cmap='rainbow');
+        #plt.show()
+
+        #plot_mst(model)
+
+        #print(labels)
+        #self.plot_pca(len(np.unique(labels)), labels)
+        #print(model.get_graph_segments(True))
+
+        segments = model.get_graph_segments(True)
+        
+        def segments_from_features_space_to_pca (segments):
+            
+            start_points_list = []
+            end_points_list = []
+           
+    
+            for i in range(len(segments)):
+                start_points_list.append(segments[i][0])
+                end_points_list.append(segments[i][1])
+
+            
+            start_points = np.column_stack(start_points_list)  # Начальные точки рёбер
+            end_points = np.column_stack(end_points_list)      # Конечные точки рёбер
+
+            # Объединяем начало и конец рёбер для общей проекции
+            all_points = np.vstack([start_points, end_points])  # Все точки для PCA
+
+            # Применяем PCA для проекции из 16D в 3D
+            pca = PCA(n_components=3)
+            all_points_pca = pca.fit_transform(all_points)
+
+            # Разделяем обратно на начальные и конечные точки рёбер в новом 3D-пространстве
+            start_points_pca = all_points_pca[:len(start_points)]
+            end_points_pca = all_points_pca[len(start_points):]
+
+            return start_points_pca, end_points_pca
+
+        start_points_pca, end_points_pca = segments_from_features_space_to_pca(segments)
+
+
+
+        
+      
+        # Создаем 3D-график
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        # Проходим по всем сегментам и рисуем линии в 3D-пространстве PCA
+        for i in range(len(start_points_pca)):
+            x_start, y_start, z_start = start_points_pca[i]
+            x_end, y_end, z_end = end_points_pca[i]
+            
+            # Рисуем ребро между начальной и конечной точкой сегмента
+            ax.plot([x_start, x_end], [y_start, y_end], [z_start, z_end], 'k-', lw=1)
+
+        # Добавляем точки для визуализации вершин
+        ax.scatter(start_points_pca[:, 0], start_points_pca[:, 1], start_points_pca[:, 2], c='r', s=50)
+        ax.scatter(end_points_pca[:, 0], end_points_pca[:, 1], end_points_pca[:, 2], c='b', s=50)
+
+        # Настраиваем оси
+        ax.set_xlabel('PCA Component 1')
+        ax.set_ylabel('PCA Component 2')
+        ax.set_zlabel('PCA Component 3')
+
+        plt.show()
+
       
 
         
@@ -516,9 +585,124 @@ class ClusterAnalysis:
         # plot the results
         plt.scatter(X[:, 0], X[:, 1], c=labels, cmap='rainbow')
         plt.show()
+        
+    def minimal_spanning_tree_clustering2(self):
+
+        
+        import seaborn as sns; sns.set()
+
+        # matplotlib 1.4 + numpy 1.10 produces warnings; we'll filter these
+        import warnings; warnings.filterwarnings('ignore', message='elementwise')
+
         """
+        def plot_mst(model, cmap='rainbow'):
+               
+            #Utility code to visualize a minimum spanning tree
+            X = model.X_fit_
+
+             # Применяем PCA для проекции в пространство трех главных компонент
+            pca = PCA(n_components=3)
+            X_pca = pca.fit_transform(X)
+
+             # Создаем 3D-график
+            fig = plt.figure(figsize=(16, 8))
+            ax1 = fig.add_subplot(121, projection='3d' )
+            ax2 = fig.add_subplot(122, projection='3d')
+    
+            #fig, ax = plt.subplots(1, 2, figsize=(16, 6), sharex=True, sharey=True)
+            for axi, full_graph, colors in zip([ax1, ax2], [True, False], ['lightblue', model.labels_]):
+                segments = model.get_graph_segments(full_graph=full_graph)
+                print(segments)
+                #axi.plot(segments[0], segments[1], '-k', zorder=1, lw=1)
+                #axi.scatter(X[:, 0], X[:, 1], c=colors, cmap=cmap, zorder=2)
+                #axi.axis('tight')
+                 # Для каждого сегмента рисуем линию в пространстве PCA
+                for seg in segments:
+                    p1 = X_pca[seg[0]]
+                    p2 = X_pca[seg[1]]
+                    ax.plot([p1[0], p2[0]], [p1[1], p2[1]], [p1[2], p2[2]], '-k', zorder=1, lw=1)
+        
+                # Рисуем точки
+                scatter = ax.scatter(X_pca[:, 0], X_pca[:, 1], X_pca[:, 2], c=colors, cmap=cmap, zorder=2)
+                ax.set_title('Full MST' if full_graph else 'Trimmed MST', size=16)
+                    
+                #ax[0].set_title('Full Minimum Spanning Tree', size=16)
+                #ax[1].set_title('Trimmed Minimum Spanning Tree', size=16);
+            plt.show()
+        """
+        from sklearn.datasets import make_blobs
+        
+        #X, y = make_blobs(200, centers=4, random_state=42)
+
+        #self.plot_pca(0, [0])
         
         
+        #plt.scatter(X[:, 0], X[:, 1], c='lightblue');
+        #plt.show()
+
+        from mst_clustering import MSTClustering
+        model = MSTClustering(cutoff_scale=2, approximate=False)
+        #labels = model.fit_predict(X)
+        labels = model.fit_predict(self.train_features_scaled)
+        #plt.scatter(X[:, 0], X[:, 1], c=labels, cmap='rainbow');
+        #plt.show()
+
+        #plot_mst(model)
+
+        #print(labels)
+        #print(model.get_graph_segments(True))
+        #self.plot_pca(len(np.unique(labels)), labels)
+
+        # Допустим, segments содержит две строки — начало и конец рёбер в 16D пространстве:
+        # segments[0] — это координаты начала рёбер, segments[1] — координаты конца рёбер
+        start_points_list = []
+        end_points_list = []
+        segments = model.model.get_graph_segments(True)
+        print(len(segments))
+        for i in len(segments):
+            start_points_list.append(segments[i][0])
+            end_points_list.append(segments[i][1])
+
+        
+        start_points = np.column_stack(start_points_list)  # Начальные точки рёбер
+        end_points = np.column_stack(end_points_list)      # Конечные точки рёбер
+
+        # Объединяем начало и конец рёбер для общей проекции
+        all_points = np.vstack([start_points, end_points])  # Все точки для PCA
+
+        # Применяем PCA для проекции из 16D в 3D
+        pca = PCA(n_components=3)
+        all_points_pca = pca.fit_transform(all_points)
+
+        # Разделяем обратно на начальные и конечные точки рёбер в новом 3D-пространстве
+        start_points_pca = all_points_pca[:len(start_points)]
+        end_points_pca = all_points_pca[len(start_points):]
+
+
+
+        # Создаем 3D-график
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        # Проходим по всем сегментам и рисуем линии в 3D-пространстве PCA
+        for i in range(len(start_points_pca)):
+            x_start, y_start, z_start = start_points_pca[i]
+            x_end, y_end, z_end = end_points_pca[i]
+            
+            # Рисуем ребро между начальной и конечной точкой сегмента
+            ax.plot([x_start, x_end], [y_start, y_end], [z_start, z_end], 'k-', lw=1)
+
+        # Добавляем точки для визуализации вершин
+        ax.scatter(start_points_pca[:, 0], start_points_pca[:, 1], start_points_pca[:, 2], c='r', s=50)
+        ax.scatter(end_points_pca[:, 0], end_points_pca[:, 1], end_points_pca[:, 2], c='b', s=50)
+
+        # Настраиваем оси
+        ax.set_xlabel('PCA Component 1')
+        ax.set_ylabel('PCA Component 2')
+        ax.set_zlabel('PCA Component 3')
+
+        plt.show()
+            
     
 if __name__ == '__main__':
     """
@@ -551,7 +735,7 @@ if __name__ == '__main__':
     ClAnalysis = ClusterAnalysis(r'datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx', 'Male')
     #ClAnalysis.ages_distribution()
   
-    #ClAnalysis.scale()
+    ClAnalysis.scale()
     #print(ClAnalysis.train_features_scaled)
     #ClAnalysis.kmeans_clustering_factory()
     ClAnalysis.minimal_spanning_tree_clustering()
