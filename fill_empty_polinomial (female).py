@@ -2,13 +2,13 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from openpyxl import load_workbook
+
 
 
 
 
 df_male = pd.read_excel('datasets/gemogramma_sorted_biomarker_columns_2.xlsx',
-                          sheet_name='Male',
+                          sheet_name='Female',
                           names=['Age',
                                  'MCH',
                                  'MCHC',
@@ -70,11 +70,5 @@ pd.set_option('display.width', 1000)
 pd.set_option('display.colheader_justify', 'center')
 pd.set_option('display.precision', 3)
 
-# Загрузка существующего Excel-файла
-path = "datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx"
-book = load_workbook(path)
-
-# Пишем DataFrame на существующий лист
-with pd.ExcelWriter("datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx", engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-    writer.book = df_male
-    df_male.to_excel(writer, sheet_name='Male', index=False)
+df_male.to_excel("datasets/gemogramma_filled_empty_by_polynomial_method_3f.xlsx",
+             sheet_name='Female', index=False)

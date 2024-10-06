@@ -88,7 +88,7 @@ class ClusterAnalysis:
             'Thrombocytes',
             'ESR']
 
-        features = features1
+        features = features2
 
         self.data = self.df_male
        
@@ -205,55 +205,69 @@ class ClusterAnalysis:
 
         print(self.Ages.values[min_index])
 
-        
+    ######################################
+    ######################################
+    ######################################
    
+    def pca(self, features_set, n_components_=3):
+        """ PCA
 
-
+            input:
+                - features_set - dataframe with features
+                - n_components - number of principal components
+            output:
+                principal components
+        """
         
-    def plot_pca(self, classes_number, labels):
-
-      
         # Principal component analisys for 3 components
-        pca = PCA(n_components=3)
-        principalComponents = pca.fit_transform(self.train_features_scaled)
+        pca = PCA(n_components=n_components_)
+        principalComponents = pca.fit_transform(features_set)
+        
+        print("PCA explained variance ratio (1st, 2nd, 3rd components): ", pca.explained_variance_ratio_)
+
+        return principalComponents
+        
+        
+    def plot_pca(self, features_set, labels, show_indexes=False):
+        """ Principal component analisys for plot clustered data
+
+            input:
+                - features_set - dataframe with features
+                - labels = labels from classified class
+                - show_indexes - show texts of indexes near data points on plot
+
+            method complete!!! maybe same scale of different axis
+        """
 
         # Create dataframe with principal components
-        principalDf = pd.DataFrame(data = principalComponents
+        principalDf = pd.DataFrame(data = self.pca(features_set)
              , columns = ['principal component 1', 'principal component 2', 'principal component 3'])
 
-        print(labels)
+  
+        # Transform labels list to np.array and numeration from 1
+        labels = np.array(labels) + 1
 
-        # Classification with only one class
-        data = np.array(labels)
-        print(data)
-       
-        target = pd.DataFrame(data=data, columns = ['Age category'])
+        # Create target dataframe with one column with labels and named 'Age category
+        target = pd.DataFrame(data=labels, columns = ['Age category'])
+
+        """
+        #Classification with only one class
         #target = pd.DataFrame(data=np.array(['0']*len(self.Ages.values)).transpose(), columns = ['Age category'])
-        print(target)
-
-        print(len(target))
-
+        """
+        
+        #Create dataframe from concatenation of two along x axis
         finalDf = pd.concat([principalDf, target], axis = 1)
 
+        """
         #finalDf.index = np.arange(1, len(finalDf) + 1)
+        """
 
-        print(finalDf)
         
-        print(principalDf)
-
         # Установить параметр для вывода всех строк
         pd.set_option('display.max_rows', None)
         pd.set_option('display.max_columns', None)
 
         
-
-
-
-
-
-
-
-
         fig = plt.figure(figsize = (8,8))
         ax = fig.add_subplot(projection='3d') 
         ax.set_xlabel('Principal Component 1', fontsize = 15)
@@ -261,27 +275,29 @@ class ClusterAnalysis:
         ax.set_zlabel('Principal Component 3', fontsize = 15)
         ax.set_title('3 component PCA', fontsize = 20)
 
+        """
         #targets = ['Iris-setosa', 'Iris-versicolor', 'Iris-virginica']
         #colors = ['r', 'g', 'b']
+        """
+        
+        # Alphabeta of classes
+        
+        targets = np.unique(labels)
+      
 
-        # Classes
+        """
+        #targets = [0, 1, 2, 3, 4]
+        #colors = ['b', 'y','r','g','c']
+        """
+        
+        # Взять из палитры len(targets) цветов.
+        colors = plt.get_cmap('tab10', len(targets)).colors  # Используем палитру 'tab10'
 
-        targets = []
-        for x in labels:
-            if x not in targets:
-                targets.append(x)
+        """
+        #for class_ in targets:
+        #    colors.append(wc.rgb_to_hex((int(255 * class_ / len (targets)), int(255 * class_ / len (targets)), int(255 * class_ / len (targets)))))
+        """
         print(targets)
-
-        colors = []
-        targets = [0, 1, 2, 3, 4]
-        colors = ['b', 'y','r','g','c']
-      
-      
-
-        for k in targets:
-            colors.append(wc.rgb_to_hex((int(255 * k / len (targets)), int(255 * k / len (targets)), int(255 * k / len (targets)))))
-       
-
 
         for target, color in zip(targets,colors):
        
@@ -294,20 +310,36 @@ class ClusterAnalysis:
                        , finalDf.loc[indicesToKeep, 'principal component 3']
                        , c = color
                        , s = 50)
-        ax.legend(targets)
+
+            if (show_indexes):
+                # Добавляем метки с номерами объектов рядом с точками
+                for i in finalDf[indicesToKeep].index:
+                    ax.text(finalDf.loc[i, 'principal component 1'],
+                            finalDf.loc[i, 'principal component 2'],
+                            finalDf.loc[i, 'principal component 3'],
+                    str(i),  # Здесь str(i) будет выводить номер объекта (индекс)
+                    fontsize=9, color='black')
+
+        # Генерируем подписи для каждого класса с использованием list comprehension
+        if len (targets) > 1:
+            labels = [f'{target} class' for target in targets]
+            ax.legend(labels)
+       
+            
         ax.grid()
 
-        ax.set_xlim([-12, 12])
-        ax.set_ylim([-12, 12])
-        ax.set_zlim([-12, 12])
+        ax.set_xlim([finalDf['principal component 1'].min(), finalDf['principal component 1'].max()])
+        ax.set_ylim([finalDf['principal component 2'].min(), finalDf['principal component 2'].max()])
+        ax.set_zlim([finalDf['principal component 3'].min(), finalDf['principal component 3'].max()])
+
         plt.show()
 
-        print(pca.explained_variance_ratio_)
+       
 
 
-
-
-        
+    ###################################################################
+    ###################################################################
+    ###################################################################    
 
     def plot_pca_cumulative(self):
         # Principal component analisys for 3 components
@@ -335,15 +367,19 @@ class ClusterAnalysis:
 
     def kmeans_clustering_factory(self):
 
-        data = self.train_features
+        data = self.train_features_scaled
+
+       
         
-        labels = self.kmeans_clustering(data, 5)
+        labels = self.kmeans_clustering(data, 6)
         indexes = self.clusters_patient_indexes(labels)
-        self.plot_pca(5, labels)
         clusters_bio_age = self.clusters_bio_age(self.Ages, indexes)
-        print(clusters_bio_age)
+
         print(indexes)
         print(clusters_bio_age)
+
+        self.plot_pca(data, labels)
+        
 
     def kmeans_clustering(self, data, clusters_number):
 
@@ -354,11 +390,15 @@ class ClusterAnalysis:
             output: clusters_labels
             
         """
+
+         
+
+        
         #x = [4, 5, 10, 4, 3, 11, 14 , 6, 10, 12]
         #y = [21, 19, 24, 17, 16, 25, 24, 22, 21, 21]
         #data = list(zip(x, y))
          
-        kmeans = KMeans(n_clusters=clusters_number)
+        kmeans = KMeans(n_clusters=clusters_number, init='k-means++')
         kmeans.fit(data)
 
         return kmeans.labels_
@@ -368,6 +408,21 @@ class ClusterAnalysis:
 
         #plt.scatter(self.data['MCH'], self.df_male['MCHC'], c=kmeans.labels_)
         #plt.show()
+
+    def elbow(self):
+
+        
+      
+        from yellowbrick.cluster import KElbowVisualizer
+
+        
+
+        # Instantiate the clustering model and visualizer
+        km = KMeans(random_state=42, init='k-means++')
+        visualizer = KElbowVisualizer(km, k=(2,10))
+         
+        visualizer.fit(self.train_features_scaled)        # Fit the data to the visualizer
+        visualizer.show()        # Finalize and render the figure
 
     def clusters_patient_indexes (self, labels):
 
@@ -736,11 +791,13 @@ if __name__ == '__main__':
     #ClAnalysis.ages_distribution()
   
     ClAnalysis.scale()
+    ClAnalysis.plot_pca(ClAnalysis.train_features_scaled, ClAnalysis.cluster_labels)
+    ClAnalysis.elbow()
+    ClAnalysis.kmeans_clustering_factory()
+
     #print(ClAnalysis.train_features_scaled)
-    #ClAnalysis.kmeans_clustering_factory()
-    ClAnalysis.minimal_spanning_tree_clustering()
+    #ClAnalysis.minimal_spanning_tree_clustering()
   
-    #ClAnalysis.plot_pca()
     #ClAnalysis.kmeans_clustering()
     
     #ClAnalysis.biological_age((24.1, 391, 78, 9.7, 14.4, 15.7, 0.45, 149, 66.4,	5.13, 8, 29.9, 3.7, 0.218, 226, 5))
