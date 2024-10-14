@@ -205,9 +205,9 @@ class ClusterAnalysis:
 
         print(self.Ages.values[min_index])
 
-    ######################################
-    ######################################
-    ######################################
+    ###################################################################
+    ###################################################################
+    ###################################################################
    
     def pca(self, features_set, n_components_=3):
         """ PCA
@@ -371,7 +371,7 @@ class ClusterAnalysis:
 
        
         
-        labels = self.kmeans_clustering(data, 6)
+        labels = self.kmeans_clustering(data, 3)
         indexes = self.clusters_patient_indexes(labels)
         clusters_bio_age = self.clusters_bio_age(self.Ages, indexes)
 
@@ -423,6 +423,48 @@ class ClusterAnalysis:
          
         visualizer.fit(self.train_features_scaled)        # Fit the data to the visualizer
         visualizer.show()        # Finalize and render the figure
+
+
+
+
+    def manhattan_distance(a, b):
+        """Вычисление Манхэттенского расстояния между двумя точками."""
+        return np.sum(np.abs(a - b), axis=1)
+
+    def initialize_centroids(X, k):
+        """Случайная инициализация центроидов."""
+        np.random.seed(42)  # Для воспроизводимости
+        indices = np.random.choice(X.shape[0], k, replace=False)
+        return X[indices]
+
+    def update_centroids(X, labels, k):
+        """Обновление центроидов как медианы каждой координаты."""
+        centroids = np.zeros((k, X.shape[1]))
+        for i in range(k):
+            cluster_points = X[labels == i]
+            if len(cluster_points) > 0:
+                centroids[i] = np.median(cluster_points, axis=0)
+        return centroids
+
+    def assign_labels(X, centroids):
+        """Назначение меток для каждой точки на основе ближайшего центроида."""
+        distances = np.array([manhattan_distance(X, c) for c in centroids]).T
+        return np.argmin(distances, axis=1)
+
+    def k_means_manhattan(X, k, max_iters=100, tol=1e-4):
+        """Основной цикл алгоритма k-means с Манхэттенской метрикой."""
+        centroids = initialize_centroids(X, k)
+        for _ in range(max_iters):
+            old_centroids = centroids.copy()
+            labels = assign_labels(X, centroids)
+            centroids = update_centroids(X, labels, k)
+            
+            # Проверка сходимости
+            if np.allclose(centroids, old_centroids, atol=tol):
+                break
+        return centroids, labels
+
+   
 
     def clusters_patient_indexes (self, labels):
 
@@ -790,11 +832,19 @@ if __name__ == '__main__':
     ClAnalysis = ClusterAnalysis(r'datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx', 'Male')
     #ClAnalysis.ages_distribution()
   
-    ClAnalysis.scale()
-    ClAnalysis.plot_pca(ClAnalysis.train_features_scaled, ClAnalysis.cluster_labels)
-    ClAnalysis.elbow()
-    ClAnalysis.kmeans_clustering_factory()
+    #ClAnalysis.scale()
+    #ClAnalysis.plot_pca(ClAnalysis.train_features_scaled, ClAnalysis.cluster_labels)
+    #ClAnalysis.elbow()
+    #ClAnalysis.kmeans_clustering_factory()
 
+
+    # Создаем случайные данные
+    X = np.array([[1, 2], [2, 3], [3, 4], [8, 8], [9, 10], [10, 12]])
+    k = 2  # Количество кластеров
+
+    centroids, labels = k_means_manhattan(X, k)
+    print("Центроиды:", centroids)
+    print("Метки кластеров:", labels)
     #print(ClAnalysis.train_features_scaled)
     #ClAnalysis.minimal_spanning_tree_clustering()
   
