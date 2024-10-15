@@ -6,11 +6,41 @@ def manhattan_distance(a, b):
         return np.sum(np.abs(a - b), axis=1)
         
 
-def initialize_centroids(X, k):
-    """Случайная инициализация центроидов."""
-    np.random.seed(42)  # Для воспроизводимости
-    indices = np.random.choice(X.shape[0], k, replace=False)
-    return X[indices]
+def initialize_centroids(X, k, kmeans_pp=True):
+
+    if kmeans_pp==False:
+        """Случайная инициализация центроидов."""
+        np.random.seed(42)  # Для воспроизводимости
+        indices = np.random.choice(X.shape[0], k, replace=False)
+        return X[indices]
+    else:
+        """Инициализация центров по методу K-means++ с Манхэттенской метрикой."""
+        n_samples = X.shape[0]
+        centers = []
+
+        # 1. Случайный выбор первого центра
+        first_center = X[np.random.randint(0, n_samples)]
+        centers.append(first_center)
+
+        # 2. Выбор оставшихся центров
+        for _ in range(1, k):
+            # Вычисление расстояний до ближайшего уже выбранного центра
+            distances = np.min([manhattan_distance(X, center) for center in centers], axis=0)
+
+            # Вероятностное распределение для выбора следующего центра
+            probs = distances / np.sum(distances)
+
+            # Выбор следующего центра на основе распределения вероятностей
+            next_center = X[np.random.choice(n_samples, p=probs)]
+            centers.append(next_center)
+
+        return np.array(centers)
+
+
+def initialize_centers(X, k):
+
+
+
 
 def update_centroids(X, labels, k):
     """Обновление центроидов как медианы каждой координаты."""

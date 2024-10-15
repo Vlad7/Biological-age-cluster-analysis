@@ -4,11 +4,12 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from enum import Enum
-import webcolors as wc
-import skfuzzy as fuzz
+#import webcolors as wc
+#import skfuzzy as fuzz
 from sklearn.model_selection import train_test_split
 from sklearn.cluster import KMeans
 from mpl_toolkits.mplot3d import Axes3D
+from sklearn.model_selection import train_test_split
 
 
 
@@ -118,38 +119,62 @@ class ClusterAnalysis:
         self.train_features_scaled = std_scaler.fit_transform(self.train_features.values)
         
         
-    def split_on_train_and_test_datasets(self, dataframe):
+    def split_on_train_and_test_datasets(self, dataframe, age_bins=False):
 
-        # Разбиваем на возрастные бины
-        bins = [20, 30, 40, 50, 60, 70, 80, 90]
-        labels = ['20-30', '30-40', '40-50', '50-60', '60-70', '70-80', '80-90']
-        dataframe['AgeBin'] = pd.cut(dataframe['Age'], bins=bins, labels=labels)
-
-       
         # Пустые DataFrame'ы для тренировочной и тестовой выборки
         train_data = pd.DataFrame()
         test_data = pd.DataFrame()
+        
+        if age_bins:
+            # Разбиваем на возрастные бины
+            bins = [20, 30, 40, 50, 60, 70, 80, 90]
+            labels = ['20-30', '30-40', '40-50', '50-60', '60-70', '70-80', '80-90']
+            dataframe['AgeBin'] = pd.cut(dataframe['Age'], bins=bins, labels=labels)
 
-        # Пропорциональное разбиение для каждого бина
-        for bin_label in labels:
-            bin_data = self.data[self.data['AgeBin'] == bin_label]
+            # Пропорциональное разбиение для каждого бина
+            for bin_label in labels:
+                bin_data = dataframe[dataframe['AgeBin'] == bin_label]
 
-            # Пропорциональный размер тестового набора зависит от количества данных в бине
-            if len(bin_data) > 1:  # Проверяем, что есть больше одного элемента для разделения
-                #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                test_size = min(0.3, 1 / len(bin_data))  # Чем меньше данных, тем меньший тестовый набор
-                print(test_size)
+                # Пропорциональный размер тестового набора зависит от количества данных в бине
+                if len(bin_data) > 1:  # Проверяем, что есть больше одного элемента для разделения
+                    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    test_size = min(0.3, 1 / len(bin_data))  # Чем меньше данных, тем меньший тестовый набор
+                    print(test_size)
 
-                #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                train_bin, test_bin = train_test_split(bin_data, test_size=test_size, random_state=42)
-            
-                train_data = pd.concat([train_data, train_bin], axis=0)
-                test_data = pd.concat([test_data, test_bin], axis=0)
+                    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    train_bin, test_bin = train_test_split(bin_data, test_size=test_size, random_state=42)
+
+                    train_data = pd.concat([train_data, train_bin], axis=0)
+                    test_data = pd.concat([test_data, test_bin], axis=0)
+
+        else:
+            # Вхідні дані (біомаркери)
+            X = dataframe.drop('Age', axis=1)
+
+            # Цільова змінна (вік)
+            y = dataframe['Age']
+
+            # Розбиваємо вибірку на навчальний та тестовий набори
+            # test_size=0.1 означає, що 10% даних піде у тестовий набір
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=42)
+
+            # Перевірка розмірів вибірок
+            print(f'Розмір навчального набору: {X_train.shape}')
+            print(f'Розмір тестового набору: {X_test.shape}')
+
+            train_data = pd.concat([train_data, X_train], axis=0)
+            test_data = pd.concat([test_data, X_test], axis=0)
+
+            ##############################!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            ########## Зробити повернення вікових даних
            
 
         # Сбрасываем индексы
-        train_data = train_data.reset_index(drop=True)
-        test_data = test_data.reset_index(drop=True)
+        #train_data = train_data.reset_index(drop=True)
+        #test_data = test_data.reset_index(drop=True)
+
+        train_data.sort_index()
+        test_data.sort_index()
 
         print("Training data:")
         print(train_data)
@@ -401,6 +426,7 @@ class ClusterAnalysis:
         kmeans = KMeans(n_clusters=clusters_number, init='k-means++')
         kmeans.fit(data)
 
+
         return kmeans.labels_
 
         #indexes = self.clusters_patient_indexes(kmeans.labels_)
@@ -425,44 +451,6 @@ class ClusterAnalysis:
         visualizer.show()        # Finalize and render the figure
 
 
-
-
-    def manhattan_distance(a, b):
-        """Вычисление Манхэттенского расстояния между двумя точками."""
-        return np.sum(np.abs(a - b), axis=1)
-
-    def initialize_centroids(X, k):
-        """Случайная инициализация центроидов."""
-        np.random.seed(42)  # Для воспроизводимости
-        indices = np.random.choice(X.shape[0], k, replace=False)
-        return X[indices]
-
-    def update_centroids(X, labels, k):
-        """Обновление центроидов как медианы каждой координаты."""
-        centroids = np.zeros((k, X.shape[1]))
-        for i in range(k):
-            cluster_points = X[labels == i]
-            if len(cluster_points) > 0:
-                centroids[i] = np.median(cluster_points, axis=0)
-        return centroids
-
-    def assign_labels(X, centroids):
-        """Назначение меток для каждой точки на основе ближайшего центроида."""
-        distances = np.array([manhattan_distance(X, c) for c in centroids]).T
-        return np.argmin(distances, axis=1)
-
-    def k_means_manhattan(X, k, max_iters=100, tol=1e-4):
-        """Основной цикл алгоритма k-means с Манхэттенской метрикой."""
-        centroids = initialize_centroids(X, k)
-        for _ in range(max_iters):
-            old_centroids = centroids.copy()
-            labels = assign_labels(X, centroids)
-            centroids = update_centroids(X, labels, k)
-            
-            # Проверка сходимости
-            if np.allclose(centroids, old_centroids, atol=tol):
-                break
-        return centroids, labels
 
    
 
@@ -832,19 +820,13 @@ if __name__ == '__main__':
     ClAnalysis = ClusterAnalysis(r'datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx', 'Male')
     #ClAnalysis.ages_distribution()
   
-    #ClAnalysis.scale()
-    #ClAnalysis.plot_pca(ClAnalysis.train_features_scaled, ClAnalysis.cluster_labels)
+    ClAnalysis.scale()
+    ClAnalysis.plot_pca(ClAnalysis.train_features_scaled, ClAnalysis.cluster_labels)
     #ClAnalysis.elbow()
-    #ClAnalysis.kmeans_clustering_factory()
+    ClAnalysis.kmeans_clustering_factory()
 
 
-    # Создаем случайные данные
-    X = np.array([[1, 2], [2, 3], [3, 4], [8, 8], [9, 10], [10, 12]])
-    k = 2  # Количество кластеров
 
-    centroids, labels = k_means_manhattan(X, k)
-    print("Центроиды:", centroids)
-    print("Метки кластеров:", labels)
     #print(ClAnalysis.train_features_scaled)
     #ClAnalysis.minimal_spanning_tree_clustering()
   
