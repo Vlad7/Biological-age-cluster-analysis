@@ -106,9 +106,9 @@ class ClusterAnalysis:
         self.Ages = self.train_ages
         print(self.Ages)
 
-        self.cluster_labels = [0]*len(self.train_features)
+
         print(len(self.train_features))
-        print(self.cluster_labels)
+
 
 
     def scale (self):
@@ -273,7 +273,6 @@ class ClusterAnalysis:
         return principalComponents
 
 
-    from fcmeans import FCM
 
 
 
@@ -284,7 +283,8 @@ class ClusterAnalysis:
 
 
 
-    def plot_pca(self, features_set, centers, u, show_indexes=False, show_ages=False):
+
+    def plot_pca(self, features_set, membership_matrix=None, centers=None, show_indexes=False, show_ages=False):
         """ Principal component analisys for plot clustered data
 
             input:
@@ -294,28 +294,27 @@ class ClusterAnalysis:
 
             method complete!!! maybe same scale of different axis
         """
-
-        # Отображение данных на графике
-        fig, ax = plt.subplots()
-        for i, point in enumerate(data):
-            # Определение цвета на основе принадлежности кластерам
-            color = np.dot(membership_matrix[i],
-                           [[1, 0, 0], [0, 1, 0], [0, 0, 1]])  # RGB на основе степеней принадлежности
-            ax.plot(point[0], point[1], marker='o', markersize=5, color=color)
-
-        # Отображение центров кластеров
-        ax.scatter(centers[:, 0], centers[:, 1], marker='x', s=100, c='black', label='Кластерные центры')
-        plt.legend()
-        plt.show()
-
-
         # Create dataframe with principal components
         principalDf = pd.DataFrame(data = self.pca(features_set, 3)
              , columns = ['principal component 1', 'principal component 2', 'principal component 3'])
 
-  
-        # Transform labels list to np.array and numeration from 1
+        labels = None
+
+        if membership_matrix is None:
+
+            # Transform labels list to np.array and numeration from 1
+            labels = np.array([0] * len(self.train_features))
+
+        elif membership_matrix.ndim==1:
+
+            labels = membership_matrix
+
+        else:
+
+            labels = np.argmax(membership_matrix, axis=0)
+
         labels = np.array(labels) + 1
+
 
         # Create target dataframe with one column with labels and named 'Age category
         target = pd.DataFrame(data=labels, columns = ['Age category'])
@@ -337,7 +336,7 @@ class ClusterAnalysis:
         pd.set_option('display.max_rows', None)
         pd.set_option('display.max_columns', None)
 
-        
+        # Отображение данных на графике
         fig = plt.figure(figsize = (8,8))
         ax = fig.add_subplot(projection='3d') 
         ax.set_xlabel('Principal Component 1', fontsize = 15)
@@ -352,8 +351,8 @@ class ClusterAnalysis:
         
         # Alphabeta of classes
         
-        targets = np.unique(labels)
-      
+        #targets = np.unique(labels)
+        targets = set(labels)
 
         """
         #targets = [0, 1, 2, 3, 4]
@@ -369,6 +368,7 @@ class ClusterAnalysis:
         """
         print(targets)
 
+
         for target, color in zip(targets,colors):
        
             # Select all indexes of humans with targeting classes
@@ -380,6 +380,10 @@ class ClusterAnalysis:
                        , finalDf.loc[indicesToKeep, 'principal component 3']
                        , c = color
                        , s = 50)
+
+
+
+
 
             if (show_indexes):
                 # Добавляем метки с номерами объектов рядом с точками
@@ -401,11 +405,29 @@ class ClusterAnalysis:
                     fontsize=9, color='black')
             """
 
+            """
             # Mark the center of each fuzzy cluster
+            if centers is not None:
+                
+                for pt in centers:
+                    pca_pt = self.pca(pt, 3)
+                    ax.plot(pca_pt[0, 0], pca_pt[0, 1], pca_pt[0, 2], 'rs')
+            
             """
-            for pt in cntr:
-                ax.plot(pt[0], pt[1], 'rs')
-            """
+
+
+
+        """
+        for i, point in enumerate(features_set):
+            # Определение цвета на основе принадлежности кластерам
+            color = np.dot(u[i],
+                           [[1, 0, 0], [0, 1, 0], [0, 0, 1]])  # RGB на основе степеней принадлежности
+            ax.plot(point[0], point[1], marker='o', markersize=5, color=color)
+        
+        # Отображение центров кластеров
+        ax.scatter(centers[:, 0], centers[:, 1], marker='x', s=100, c='black', label='Кластерные центры')
+        plt.legend()
+        """
                 
         # Генерируем подписи для каждого класса с использованием list comprehension
         if len (targets) > 1:
@@ -421,7 +443,10 @@ class ClusterAnalysis:
 
         plt.show()
 
-       
+
+
+
+
 
 
     ###################################################################
@@ -459,13 +484,24 @@ class ClusterAnalysis:
     def kmeans_clustering_factory(self):
         """OK"""
 
+        """Доробити алгоритм k-means"""
+
         data = self.train_features_set_scaled
 
         clasters_number = int(input("Enter clusters number: "))
         print("Clasters number: ", clasters_number)
 
-        labels = self.kmeans_clustering(data, clasters_number)
+        centers, labels = self.kmeans_clustering(data, clasters_number)
 
+        """
+        classes_number = len(set(labels))
+        persons_number = len(labels)
+
+        u = np.zeros((classes_number, persons_number))
+
+        for i in range(len(labels)):
+            u[labels[i]][i] = 1
+        """
 
 
         indexes = self.clusters_patient_indexes(labels)
@@ -474,7 +510,7 @@ class ClusterAnalysis:
         print(indexes)
         print(clusters_bio_age)
 
-        self.plot_pca(data, labels, show_ages=True)
+        self.plot_pca(data, labels, centers, show_ages=True)
         
 
     def kmeans_clustering(self, data, clusters_number):
@@ -495,7 +531,7 @@ class ClusterAnalysis:
         kmeans.fit(data)
 
 
-        return kmeans.labels_
+        return kmeans.cluster_centers_, kmeans.labels_
 
         #indexes = self.clusters_patient_indexes(kmeans.labels_)
         #self.clusters_bio_age(self.Ages, indexes)
@@ -517,7 +553,7 @@ class ClusterAnalysis:
 
 
 
-   
+   ##################################### K-means algorithm ###################################################
 
     def clusters_patient_indexes (self, labels):
 
@@ -525,8 +561,9 @@ class ClusterAnalysis:
 
         clusters_patient_indexes = {key: [] for key in dict.fromkeys(np.unique(labels))}
 
-        for i in range(len(labels)):
-            clusters_patient_indexes[labels[i]].append(i)
+        for index, claster_number in enumerate(labels):
+
+            clusters_patient_indexes[claster_number].append(index)
 
         return clusters_patient_indexes
 
@@ -563,7 +600,7 @@ class ClusterAnalysis:
     ####################################################################
 
 
-    def initialize_centers_kmeans_pp(self, data, num_clusters, m):
+    def initialize_centers_kmeans_pp(self, data, num_clusters):
         centers = []
         centers.append(data[np.random.randint(0, len(data))])
 
@@ -609,28 +646,23 @@ class ClusterAnalysis:
 
 
     def cmeans_factory(self):
+
         data = self.train_features_set_scaled
 
         clasters_number = int(input("Enter clusters number: "))
-        print("Clasters number: ", clasters_number)
+        print("Clasters number:        ", clasters_number)
 
-
+        # u - Степени принадлежности каждого объекта к каждому кластеру
         cntr, u = self.cmeans_clustering(data, clasters_number)
-        labels = np.argmax(u, axis=0)
 
+        self.plot_pca(data, u, cntr, show_indexes=False, show_ages=False)
+
+        labels = np.argmax(u, axis=0)
         indexes = self.clusters_patient_indexes(labels)
         clusters_bio_age = self.clusters_bio_age_c_means(self.train_ages, indexes, u)
 
         print(indexes)
         print(clusters_bio_age)
-
-        membership_matrix = u  # Степени принадлежности каждого объекта к каждому кластеру
-        centers = cntr
-
-
-
-
-        self.plot_pca(data, centers, membership_matrix, show_indexes=False, show_ages=False)
 
     def clusters_bio_age_c_means(self, train_ages_dataframe, indexes_of_persons_in_clusters, u):
 
@@ -675,7 +707,8 @@ class ClusterAnalysis:
 
         m = 3  # Параметр "размытия"
 
-        centers = self.initialize_centers_kmeans_pp(data, clasters_number, m)
+        # Initializing centers matrix by k-means++ method
+        centers = self.initialize_centers_kmeans_pp(data, clasters_number)
         membership_matrix = self.calculate_initial_membership_matrix(data, centers, m)
         print(centers)
         # C-means clustering
@@ -710,7 +743,6 @@ class ClusterAnalysis:
 
     def minimal_spanning_tree_clustering(self):
 
-        
         import seaborn as sns; sns.set()
 
         # matplotlib 1.4 + numpy 1.10 produces warnings; we'll filter these
@@ -981,15 +1013,15 @@ if __name__ == '__main__':
     ClAnalysis.ages_distribution()
   
     ClAnalysis.scale()
-    ClAnalysis.plot_pca(ClAnalysis.train_features_set_scaled, ClAnalysis.cluster_labels)
+    ClAnalysis.plot_pca(ClAnalysis.train_features_set_scaled)
     #ClAnalysis.elbow()
     ClAnalysis.kmeans_clustering_factory()
-    #ClAnalysis.cmeans_factory()
+    ClAnalysis.cmeans_factory()
 
 
 
     #print(ClAnalysis.train_features_set_scaled)
-    #ClAnalysis.minimal_spanning_tree_clustering()
+    ClAnalysis.minimal_spanning_tree_clustering()
   
     #ClAnalysis.kmeans_clustering()
     
