@@ -47,3 +47,5 @@ class Feature(Enum):
     Thrombocrit = 14
     Thrombocytes = 15
     ESR = 16
+
+#features1 = [for e in Feature]
