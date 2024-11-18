@@ -853,8 +853,8 @@ class ClusterAnalysis:
                 axi.plot(segments[0], segments[1], '-k', zorder=1, lw=1)
                 axi.scatter(X[:, 0], X[:, 1], c=colors, cmap=cmap, zorder=2)
                 axi.axis('tight')
-                
-            
+
+
             ax[0].set_title('Full Minimum Spanning Tree', size=16)
             ax[1].set_title('Trimmed Minimum Spanning Tree', size=16);
             plt.show()
@@ -904,13 +904,16 @@ class ClusterAnalysis:
         #self.plot_pca(0, [0])
         
         
-        #plt.scatter(X[:, 0], X[:, 1], c='lightblue');
-        #plt.show()
+
+
+
+
+
 
         from mst_clustering import MSTClustering
+
         model = MSTClustering(cutoff_scale=7, approximate=False)
 
-        #labels = model.fit_predict(X)
         labels = model.fit_predict(self.train_data_selected_features_set_scaled)
         
         #plt.scatter(X[:, 0], X[:, 1], c=labels, cmap='rainbow');
@@ -926,10 +929,11 @@ class ClusterAnalysis:
         #print(model.get_graph_segments(True))
         # Допустим, segments содержит две строки — начало и конец рёбер в 16D пространстве:
         # segments[0] — это координаты начала рёбер, segments[1] — координаты конца рёбер
+
+
         segments = model.get_graph_segments(True)
 
-        def segments_from_features_space_to_pca (segments):
-            
+        def segments_from_features_space_to_principal_component_space (segments):            
             start_points_list = []
             end_points_list = []
 
@@ -938,6 +942,13 @@ class ClusterAnalysis:
                 start_points_list.append(segments[i][0])
                 end_points_list.append(segments[i][1])
 
+            """import numpy as np
+                a = np.array((1,2,3))
+                b = np.array((2,3,4))
+                np.column_stack((a,b))
+                array([[1, 2],
+                        [2, 3],
+                        [3, 4]])"""
 
             start_points = np.column_stack(start_points_list)  # Начальные точки рёбер
             end_points = np.column_stack(end_points_list)      # Конечные точки рёбер
@@ -955,7 +966,7 @@ class ClusterAnalysis:
 
             return start_points_pca, end_points_pca
 
-        start_points_pca, end_points_pca = segments_from_features_space_to_pca(segments)
+        start_points_pca, end_points_pca = segments_from_features_space_to_principal_component_space(segments)
 
       
         # Создаем 3D-график
@@ -1026,25 +1037,26 @@ if __name__ == '__main__':
     
 
     ClAnalysisMale = ClusterAnalysis(r'datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx', 'Male')
-    ClAnalysisMale.ages_distribution()
-    ClAnalysisMale.scale()
-    ClAnalysisMale.plot_pca(ClAnalysisMale.train_data_selected_features_set_scaled)
+    #ClAnalysisMale.ages_distribution()
+    #ClAnalysisMale.scale()
+    #ClAnalysisMale.plot_pca(ClAnalysisMale.train_data_selected_features_set_scaled)
     #ClAnalysisMale.elbow()
-    ClAnalysisMale.kmeans_clustering_factory()
-    ClAnalysisMale.cmeans_factory()
+    #ClAnalysisMale.kmeans_clustering_factory()
+    #ClAnalysisMale.cmeans_factory()
 
+    input = ("")
 
 
     #print(ClAnalysis.train_data_selected_features_set_scaled)
-    ClAnalysisMale.minimal_spanning_tree_clustering()
+    #ClAnalysisMale.minimal_spanning_tree_clustering()
 
-    ClAnalysisFemale = ClusterAnalysis(r'datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx', 'Female')
-    ClAnalysisFemale.ages_distribution()
-    ClAnalysisFemale.scale()
-    ClAnalysisFemale.plot_pca(ClAnalysisFemale.train_data_selected_features_set_scaled)
+    #ClAnalysisFemale = ClusterAnalysis(r'datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx', 'Female')
+    #ClAnalysisFemale.ages_distribution()
+    #ClAnalysisFemale.scale()
+    #ClAnalysisFemale.plot_pca(ClAnalysisFemale.train_data_selected_features_set_scaled)
     #ClAnalysisFemale.elbow()
-    ClAnalysisFemale.kmeans_clustering_factory()
-    ClAnalysisFemale.cmeans_factory()
+    #ClAnalysisFemale.kmeans_clustering_factory()
+    #ClAnalysisFemale.cmeans_factory()
 
     #ClAnalysis.kmeans_clustering()
     
