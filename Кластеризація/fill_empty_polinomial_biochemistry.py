@@ -12,8 +12,8 @@ print("All features: " + str(ft.features_biochemistry_all))
 
 
 
-df_male = pd.read_excel('datasets/gemogramma_sorted_biomarker_columns_2.xlsx',
-                          sheet_name='Male',
+df_male = pd.read_excel('datasets/biochemistry_sorted.xlsx',
+                          sheet_name='Biochemistry',
                           names=dataset_attributes)
 
 print('Data was imported')
@@ -29,17 +29,31 @@ print('ISNULL: ', df_male.isnull().sum().sum())
 
 df_male = df_male.dropna(subset=['Age'])
 
-df_male = df_male.drop(df_male[df_male['Age'] < 23].index)
-df_male = df_male.drop(df_male[df_male['Age'] > 90].index)
 
+df_male = df_male.drop(df_male[df_male['Age'] < 20].index)
+df_male = df_male.drop(df_male[df_male['Age'] > 80].index)
+print(df_male.shape[0])
 df_male = df_male.dropna(thresh=8)
 
 df_male = df_male.sort_values(by='Age')
 
+#print(df_male[df_male.columns].duplicated())
+# Check for duplicate indices
+#print(df_male.index.duplicated())
+#print('Stop')
 
-df_male.interpolate(method='polynomial', order=2)       # !!!!!!!!!!!!!!
+# Сохраняем первый столбец отдельно
+#first_column = df_male.iloc[:, 0]
+# Применяем интерполяцию ко всем остальным столбцам
+#df_male.iloc[:, 1:] = df_male.iloc[:, 1:].interpolate(method='linear')
+
+df_male.interpolate(method='linear')       # !!!!!!!!!!!!!!
+# Если необходимо заполнить пропуски в начале или конце
+#df_male.iloc[:, 1:] = df_male.iloc[:, 1:].ffill().bfill()
 df_male = df_male.ffill()
 df_male = df_male.bfill()
+# Объединяем первый столбец обратно
+#df_male.iloc[:, 0] = first_column
 df_male = df_male.sort_index()
 df_male = df_male.sample(frac=1).reset_index(drop=True)
 df_male = df_male.reset_index(drop=True)
@@ -63,7 +77,7 @@ pd.set_option('display.precision', 3)
 path = "datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx"
 book = load_workbook(path)
 
-# Пишем DataFrame на существующий лист
-with pd.ExcelWriter("datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx", engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-    writer.book = df_male
-    df_male.to_excel(writer, sheet_name='Male', index=False)
+df_male.to_excel("datasets/biochemistry_filled_empty_by_polynomial_method_3.xlsx",
+             sheet_name='Biochemistry', index=False)
+
+

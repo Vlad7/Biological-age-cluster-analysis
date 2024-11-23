@@ -1,113 +1,84 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler    #Standardize features by removing the mean and scaling to unit variance.
 from sklearn.decomposition import PCA
-from enum import Enum
 #import webcolors as wc
 import skfuzzy as fuzz
 from sklearn.model_selection import train_test_split
 from sklearn.cluster import KMeans
 from mpl_toolkits.mplot3d import Axes3D
-from sklearn.model_selection import train_test_split
 from scipy.spatial.distance import cdist
+import features as ft
+import sys
+from enum import Enum
 
+class Dataset(Enum):
+    Gematology = 1
+    Biochemistry = 2
+    Bones = 3
 
-class Feature(Enum):
-    MCH = 1
-    MCHC = 2
-    MCV = 3
-    MPV = 4
-    PDW = 5
-    RDW = 6
-    Hematocrit = 7
-    Hemoglobin = 8
-    Granulocytes = 9
-    Red_blood_cells = 10
-    Leukocytes = 11
-    Lymphocytes = 12
-    Monocyte = 13
-    Thrombocrit = 14
-    Thrombocytes = 15
-    ESR = 16
 
 class ClusterAnalysis:
     
-    def __init__ (self, path, sex):
+    def __init__ (self, path, sex, is_hight_correlated_features=True, datasettype=Dataset.Gematology):
 
-        self.df_male = pd.read_excel(path,
-                          sheet_name=sex,
-                          names=['Age',
-                                 'MCH',
-                                 'MCHC',
-                                 'MCV',
-                                 'MPV',
-                                 'PDW',
-                                 'RDW',
-                                 'Hematocrit',
-                                 'Hemoglobin',
-                                 'Granulocytes',
-                                 'Red blood cells',
-                                 'Leukocytes',
-                                 'Lymphocytes',
-                                 'Monocyte',
-                                 'Thrombocrit',
-                                 'Thrombocytes',
-                                 'ESR'])
+        dataset_attributes = ['Age']
 
-        print('Data was imported')
+        if datasettype == Dataset.Gematology:
+            dataset_attributes.extend(ft.features_gematology_all)
+            print("All features: " + str(ft.features_gematology_all))
 
-        #Biomarkers
-        
-        #features1 = [for e in Feature]
-        features1=[
-                                 'MCH',
-                                 'MCHC',
-                                 'MCV',
-                                 'MPV',
-                                 'PDW',
-                                 'RDW',
-                                 'Hematocrit',
-                                 'Hemoglobin',
-                                 'Granulocytes',
-                                 'Red blood cells',
-                                 'Leukocytes',
-                                 'Lymphocytes',
-                                 'Monocyte',
-                                 'Thrombocrit',
-                                 'Thrombocytes',
-                                 'ESR']
+        elif datasettype == Dataset.Biochemistry:
+            dataset_attributes.extend((ft.features_biochemistry_all))
+            print("All features: " + str(ft.features_biochemistry_all))
+        elif datasettype == Dataset.Bones:
+            dataset_attributes.extend((ft.features_bones_all))
+            print("All features: " + str(ft.features_bones_all))
 
-        print (features1)
+        try:
+            self.data = pd.read_excel(path,
+                            sheet_name=sex,
+                            names=dataset_attributes)
 
-        #Pisaruk
+            print('data was imported!')
 
-        
-        features2 = ['RDW',
-            'Hematocrit',
-            'Hemoglobin',
-            'Thrombocytes',
-            'ESR']
-
-        features = features2
-
-        self.data = self.df_male
-       
-
-        self.train_data, self.test_data, self.train_ages, self.test_ages = self.split_on_train_and_test_datasets(self.data)
-        
-        # Separating out the features
-        self.train_features = self.train_data.loc[:, features]
-        print(self.train_features)
-
-        self.scale()
-
-        # Separating out the ages
-        self.Ages = self.train_ages
-        print(self.Ages)
+        except FileNotFoundError:
+            print('File was not found!')
+            sys.exit(0)
 
 
-        print(len(self.train_features))
+        selected_attributes = ['Age']
+
+
+        #!!!
+        if is_hight_correlated_features:
+            # Select feature labels that hight correlates with age
+            selected_attributes.extend(ft.features_gematology_hight_correlation_with_age)
+        else:
+            selected_attributes = dataset_attributes
+
+        #Split dataset on train and test datasets with ages accordingly
+        self.train_data, self.test_data, self.train_ages, self.test_ages = (
+            self.split_on_train_and_test_datasets(self.data.loc[:, selected_attributes], True))
+
+
+
+        # Print train data with selected features
+        print(self.train_data)
+
+        # Train ages
+        print(self.train_ages)
+
+
+        # Biomarkers sfs = selected feature set
+        self.train_data_sfs_scaled = (
+        self.scale())
+        #self.train_data_sfs_scaled, self.test_data_sfs_scaled, self.train_ages_scaled, self.test_ages_scaled = (
+        #    self.scale(self.train_data, self.test_data, self.train_ages, self.test_ages))
+
+
+    #def find_bio_age(self, train_dataframe):
 
 
 
@@ -116,12 +87,113 @@ class ClusterAnalysis:
         # Scaling
 
         std_scaler = StandardScaler()
-        self.train_features_set_scaled = std_scaler.fit_transform(self.train_features.values)
-        
-        
-    def split_on_train_and_test_datasets(self, dataframe, age_bins=False):
+        train_data_sfs_scaled = std_scaler.fit_transform(self.train_data.values)
+        #test_data_sfs_scaled = std_scaler.fit_transform(self.test_data.values)
+        #train_ages_scaled = std_scaler.fit_transform(self.train_ages.values)
+        #test_ages_scaled = std_scaler.fit_transform(self.test_ages.values)
 
-        # Пустые DataFrame'ы для тренировочной и тестовой выборки
+        return train_data_sfs_scaled#, test_data_sfs_scaled, train_ages_scaled, test_ages_scaled
+        
+    def move_age_bin_column_to_after_age_position(self, data):
+
+        # Впевнимося, що Age_bin перемыщається одразу після Age
+        columns = list(data.columns)
+        age_index = columns.index("Age")
+        columns.remove("AgeBin")  # Прибираємо Age_bin з поточної позиції
+        columns.insert(age_index + 1, "AgeBin")  # Вставляемо Age_bin одразу після Age
+
+        # Переставляємо колонки
+        data = data[columns]
+
+        return data
+
+    def split_on_train_and_test_datasets_based_on_age_bins(self, data):
+        """
+            Розділити вибірку на тренувальну та тестову на основі вікових бінів.
+            Вікові біни - це як би вікові групи
+        :param data: input data
+        :return: train_data, test_data - dataframes
+        """
+        # Порожні data'и для тренувальної та тестової вибірок
+        train_data = pd.DataFrame()
+        test_data = pd.DataFrame()
+
+        train_ages = pd.DataFrame()
+        test_ages = pd.DataFrame()
+
+
+
+        # Розбиваємо на вікові біни
+        bins = [20, 30, 40, 50, 60, 70, 80, 90]
+        labels = ['20-30', '30-40', '40-50', '50-60', '60-70', '70-80', '80-90']
+        data['AgeBin'] = pd.cut(data['Age'], bins=bins, labels=labels)
+
+        data = self.move_age_bin_column_to_after_age_position(data)
+
+        # Пропорциональное разбиение для каждого бина
+        for bin_label in labels:
+            bin_data = data[data['AgeBin'] == bin_label]
+
+            # Пропорциональный размер тестового набора зависит от количества данных в бине
+            if len(bin_data) > 1:  # Проверяем, что есть больше одного элемента для разделения
+
+                # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!errors?
+                test_size = min(0.3,
+                                1 / len(bin_data))  # Чем меньше данных, тем меньший тестовый набор до определенного
+                # предела 3 обьекта в бине, потом, при большем количестве данных будет меньше тестовый набор
+                print("Test size in age bin " + str(test_size))
+
+                # Maybe make with y! stratify maybe
+                train_bin, test_bin = train_test_split(bin_data, test_size=test_size, random_state=42)
+
+                train_data = pd.concat([train_data, train_bin], axis=0)
+                test_data = pd.concat([test_data, test_bin], axis=0)
+
+        # Вхідні дані (біомаркери)
+        Xtrain = train_data.drop(['Age', 'AgeBin'], axis=1)
+        Xtest = test_data.drop(['Age', 'AgeBin'], axis=1)
+        # Цільова змінна (вік)
+        ytrain = train_data['Age']
+        ytest = test_data['Age']
+
+        return Xtrain, Xtest, ytrain, ytest
+
+    def split_on_train_and_test_datasets_without_bins(self, data):
+
+        # Пустые data'ы для тренировочной и тестовой выборки
+        train_data = pd.data()
+        test_data = pd.data()
+
+        train_ages = pd.data()
+        test_ages = pd.data()
+
+        # Вхідні дані (біомаркери)
+        X = data.drop('Age', axis=1)
+
+        # Цільова змінна (вік)
+        y = data['Age']
+
+        # Розбиваємо вибірку на навчальний та тестовий набори
+        # test_size=0.1 означає, що 10% даних піде у тестовий набір
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=42)
+
+        # Перевірка розмірів вибірок
+        print(f'Розмір навчального набору: {X_train.shape}')
+        print(f'Розмір тестового набору: {X_test.shape}')
+
+        train_data = pd.concat([train_data, X_train], axis=0)
+        test_data = pd.concat([test_data, X_test], axis=0)
+
+        train_ages = pd.concat([train_ages, y_train], axis=0)
+        test_ages = pd.concat([test_ages, y_test], axis=0)
+        ##############################!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        ########## Зробити повернення вікових даних
+
+        return train_data, test_data, train_ages, test_ages
+
+    def split_on_train_and_test_datasets(self, data, age_bins=True):
+
+        # Пустые data'ы для тренировочной и тестовой выборки
         train_data = pd.DataFrame()
         test_data = pd.DataFrame()
 
@@ -129,52 +201,13 @@ class ClusterAnalysis:
         test_ages = pd.DataFrame()
         
         if age_bins:
-            # Разбиваем на возрастные бины
-            bins = [20, 30, 40, 50, 60, 70, 80, 90]
-            labels = ['20-30', '30-40', '40-50', '50-60', '60-70', '70-80', '80-90']
-            dataframe['AgeBin'] = pd.cut(dataframe['Age'], bins=bins, labels=labels)
-
-            # Пропорциональное разбиение для каждого бина
-            for bin_label in labels:
-                bin_data = dataframe[dataframe['AgeBin'] == bin_label]
-
-                # Пропорциональный размер тестового набора зависит от количества данных в бине
-                if len(bin_data) > 1:  # Проверяем, что есть больше одного элемента для разделения
-                    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                    test_size = min(0.3, 1 / len(bin_data))  # Чем меньше данных, тем меньший тестовый набор
-                    print(test_size)
-
-                    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                    train_bin, test_bin = train_test_split(bin_data, test_size=test_size, random_state=42)
-
-                    train_data = pd.concat([train_data, train_bin], axis=0)
-                    test_data = pd.concat([test_data, test_bin], axis=0)
+           train_data, test_data, train_ages, test_ages = self.split_on_train_and_test_datasets_based_on_age_bins(data)
 
         else:
-            # Вхідні дані (біомаркери)
-            X = dataframe.drop('Age', axis=1)
 
-            # Цільова змінна (вік)
-            y = dataframe['Age']
+            train_data, test_data, train_ages, test_ages = self.split_on_train_and_test_datasets_without_bins(data)
 
-            # Розбиваємо вибірку на навчальний та тестовий набори
-            # test_size=0.1 означає, що 10% даних піде у тестовий набір
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=42)
-
-            # Перевірка розмірів вибірок
-            print(f'Розмір навчального набору: {X_train.shape}')
-            print(f'Розмір тестового набору: {X_test.shape}')
-
-            train_data = pd.concat([train_data, X_train], axis=0)
-            test_data = pd.concat([test_data, X_test], axis=0)
-
-            train_ages = pd.concat([train_ages, y_train], axis=0)
-            test_ages = pd.concat([test_ages, y_test], axis=0)
-            ##############################!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            ########## Зробити повернення вікових даних
-           
-
-        # Сбрасываем индексы
+        # Сбрасываем индексыб, не нужно!!!
         #train_data = train_data.reset_index(drop=True)
         #test_data = test_data.reset_index(drop=True)
 
@@ -192,53 +225,82 @@ class ClusterAnalysis:
         print(test_data)
 
         return train_data, test_data, train_ages, test_ages
+
+
         #print(self.data['AgeBin'])
 
-        #X_train, X_test, y_train, y_test = train_test_split(self.train_features, self.Ages.iloc[:,0],
-        #                                                    test_size=0.2, random_state=42, stratify=self.Ages.iloc[:,0])
+        #X_train, X_test, y_train, y_test = train_test_split(self.train_data_selected_features, self.train_ages.iloc[:,0],
+        #                                                    test_size=0.2, random_state=42, stratify=self.train_ages.iloc[:,0])
         #print(X_train)
 
 
 
 
-    def ages_distribution(self):
-
-        # Припустимо, що у вас є колонка 'Age' з віковими даними
-        n, bins, patches = plt.hist(self.data['Age'], bins=10)
-        plt.title('Розподіл вікових груп')
-        plt.xlabel('Вік')
-        plt.ylabel('Кількість')
-        # Додаємо сітку по границям бінів
-        plt.grid(True, which='both', axis='x')
-        
-        plt.xticks(bins)  # Встановлюємо мітки по границям бінів
-
-        plt.show()
 
 
-        # Створюємо гістограму та отримуємо дані про бінінг
+    def ages_distribution(self, rounded_intervals=True):
+
+        if rounded_intervals:
+            # Приклад даних
+            data = self.data['Age']
+            data = pd.DataFrame(data)
+
+            # Визначаємо інтервали та мітки
+            bins = [20, 30, 40, 50, 60, 70, 80, 90]
+            labels = ['20-30', '30-40', '40-50', '50-60', '60-70', '70-80', '80-90']
+
+            # Створюємо нову колонку з інтервалами
+            data['AgeBin'] = pd.cut(data['Age'], bins=bins, labels=labels)
+
+            # Побудова гістограми
+            plt.hist(data['Age'], bins=bins, edgecolor='black')
+            plt.xlabel('Age Groups')
+            plt.ylabel('Frequency')
+            plt.title('Age Distribution in 10-Year Intervals')
+            plt.grid(True, which='both', axis='x')
+            plt.xticks(bins)  # Встановлюємо мітки на осі X для інтервалів
+            plt.show()
+
+            # Виводимо data для перевірки
+            #print("Ages distribution data: " + data)
+
+            # Обчислюємо частотність для кожної групи
+            age_distribution = data['AgeBin'].value_counts().sort_index()
+
+            # Вивід результату
+            #print("Ages distribution: " + age_distribution)
+
+        else:
+
+            # Припустимо, що у нас є колонка 'Age' з віковими даними
+            n, bins, patches = plt.hist(self.data['Age'], bins=10)
+            plt.title('Розподіл вікових груп')
+            plt.xlabel('Вік')
+            plt.ylabel('Кількість')
+            # Додаємо сітку по границям бінів
+            plt.grid(True, which='both', axis='x')
+
+            plt.xticks(bins)  # Встановлюємо мітки по границям бінів
+            # Створюємо гістограму та отримуємо дані про бінінг
+
+            plt.show()
+
+            # Можливо зробити, щоб виводилися дані про частотність у цьому випадку.
 
 
-
-
-
-
-        # !!! Треба по групам, а не просто по вікам.
-        age_distribution = self.data['Age'].value_counts()
-        print(age_distribution)
 
     def biological_age (self, analysis):
 
         # Add normalisation for biomarkers !!!!!!!!!!!!!!!!!!!!!!
         min_dist = 100000000000
         min_index = 0
-        for index, row in self.train_features.iterrows():
+        for index, row in self.train_data_selected_features.iterrows():
             dist = np.linalg.norm(row-analysis)
             if dist < min_dist:
                 min_dist = dist
                 min_index = index
 
-        print(self.Ages.values[min_index])
+        print(self.train_ages.values[min_index])
 
     ###################################################################
     ###################################################################
@@ -248,7 +310,7 @@ class ClusterAnalysis:
         """ PCA
 
             input:
-                - features_set - dataframe with features
+                - features_set - data with features
                 - n_components - number of principal components
             output:
                 principal components
@@ -288,13 +350,13 @@ class ClusterAnalysis:
         """ Principal component analisys for plot clustered data
 
             input:
-                - features_set - dataframe with features
+                - features_set - data with features
                 - labels = labels from classified class
                 - show_indexes - show texts of indexes near data points on plot
 
             method complete!!! maybe same scale of different axis
         """
-        # Create dataframe with principal components
+        # Create data with principal components
         principalDf = pd.DataFrame(data = self.pca(features_set, 3)
              , columns = ['principal component 1', 'principal component 2', 'principal component 3'])
 
@@ -303,7 +365,7 @@ class ClusterAnalysis:
         if membership_matrix is None:
 
             # Transform labels list to np.array and numeration from 1
-            labels = np.array([0] * len(self.train_features))
+            labels = np.array([0] * len(self.train_data))
 
         elif membership_matrix.ndim==1:
 
@@ -316,15 +378,15 @@ class ClusterAnalysis:
         labels = np.array(labels) + 1
 
 
-        # Create target dataframe with one column with labels and named 'Age category
+        # Create target data with one column with labels and named 'Age category
         target = pd.DataFrame(data=labels, columns = ['Age category'])
 
         """
         #Classification with only one class
-        #target = pd.DataFrame(data=np.array(['0']*len(self.Ages.values)).transpose(), columns = ['Age category'])
+        #target = pd.data(data=np.array(['0']*len(self.train_ages.values)).transpose(), columns = ['Age category'])
         """
         
-        #Create dataframe from concatenation of two along x axis
+        #Create data from concatenation of two along x axis
         finalDf = pd.concat([principalDf, target], axis = 1)
 
         """
@@ -497,7 +559,7 @@ class ClusterAnalysis:
 
         """ k-means clusterning
 
-            input: features dataframe
+            input: features data
                    clusters_number
 
             output: clusters_labels
@@ -520,7 +582,7 @@ class ClusterAnalysis:
 
         """Доробити алгоритм k-means"""
 
-        data = self.train_features_set_scaled
+        data = self.train_data_selected_features_set_scaled
 
         clasters_number = 0
 
@@ -556,7 +618,7 @@ class ClusterAnalysis:
         self.plot_pca(data, labels, centers, show_ages=True)
 
         # indexes = self.clusters_patient_indexes(kmeans.labels_)
-        # self.clusters_bio_age(self.Ages, indexes)
+        # self.clusters_bio_age(self.train_ages, indexes)
 
         # plt.scatter(self.data['MCH'], self.df_male['MCHC'], c=kmeans.labels_)
         # plt.show()
@@ -571,7 +633,7 @@ class ClusterAnalysis:
         km = KMeans(random_state=42, init='k-means++')
         visualizer = KElbowVisualizer(km, k=(2,10))
          
-        visualizer.fit(self.train_features_set_scaled)        # Fit the data to the visualizer
+        visualizer.fit(self.train_data_selected_features_set_scaled)        # Fit the data to the visualizer
         visualizer.show()        # Finalize and render the figure
 
 
@@ -615,8 +677,8 @@ class ClusterAnalysis:
             persons_indexes = indexes_of_persons_in_clusters[cluster_number]
 
             for person_index in persons_indexes:
-
-                summ += train_ages_dataframe['Age'].values[person_index]
+                 #3                summ +=t rain_ages_dataframe['Age'].values[person_index]
+                summ +=train_ages_dataframe.values[person_index]
 
             summ = summ / len(persons_indexes)
 
@@ -711,7 +773,7 @@ class ClusterAnalysis:
 
     def cmeans_factory(self):
 
-        data = self.train_features_set_scaled
+        data = self.train_data_selected_features_set_scaled
 
         clasters_number = 0
 
@@ -775,7 +837,9 @@ class ClusterAnalysis:
 
             summ = 0
 
-            for person_index, age in enumerate(train_ages_dataframe['Age'].values):
+            for person_index, age in enumerate(train_ages_dataframe.values):
+
+            #for person_index, age in enumerate(train_ages_dataframe['Age'].values):
                 summ += age * u[cluster_number][person_index]
 
             summ = summ / np.sum(u[cluster_number])    ### !!!!!!!!!!!!!!!
@@ -796,6 +860,7 @@ class ClusterAnalysis:
         # matplotlib 1.4 + numpy 1.10 produces warnings; we'll filter these
         import warnings; warnings.filterwarnings('ignore', message='elementwise')
 
+
         def plot_mst(model, cmap='rainbow'):
            
             """Utility code to visualize a minimum spanning tree"""
@@ -807,11 +872,48 @@ class ClusterAnalysis:
                 axi.plot(segments[0], segments[1], '-k', zorder=1, lw=1)
                 axi.scatter(X[:, 0], X[:, 1], c=colors, cmap=cmap, zorder=2)
                 axi.axis('tight')
-                
-            
+
+
             ax[0].set_title('Full Minimum Spanning Tree', size=16)
             ax[1].set_title('Trimmed Minimum Spanning Tree', size=16);
             plt.show()
+
+        """
+               def plot_mst(model, cmap='rainbow'):
+
+                   #Utility code to visualize a minimum spanning tree
+                   X = model.X_fit_
+
+                                        # Применяем PCA для проекции в пространство трех главных компонент
+                                pca = PCA(n_components=3)
+                                   X_pca = pca.fit_transform(X)
+
+                    # Создаем 3D-график
+                   fig = plt.figure(figsize=(16, 8))
+                   ax1 = fig.add_subplot(121, projection='3d' )
+                   ax2 = fig.add_subplot(122, projection='3d')
+
+                   #fig, ax = plt.subplots(1, 2, figsize=(16, 6), sharex=True, sharey=True)
+                   for axi, full_graph, colors in zip([ax1, ax2], [True, False], ['lightblue', model.labels_]):
+                       segments = model.get_graph_segments(full_graph=full_graph)
+                       print(segments)
+                       #axi.plot(segments[0], segments[1], '-k', zorder=1, lw=1)
+                       #axi.scatter(X[:, 0], X[:, 1], c=colors, cmap=cmap, zorder=2)
+                       #axi.axis('tight')
+                        # Для каждого сегмента рисуем линию в пространстве PCA
+                       for seg in segments:
+                           p1 = X_pca[seg[0]]
+                           p2 = X_pca[seg[1]]
+                           ax.plot([p1[0], p2[0]], [p1[1], p2[1]], [p1[2], p2[2]], '-k', zorder=1, lw=1)
+
+                       # Рисуем точки
+                       scatter = ax.scatter(X_pca[:, 0], X_pca[:, 1], X_pca[:, 2], c=colors, cmap=cmap, zorder=2)
+                       ax.set_title('Full MST' if full_graph else 'Trimmed MST', size=16)
+
+                       #ax[0].set_title('Full Minimum Spanning Tree', size=16)
+                       #ax[1].set_title('Trimmed Minimum Spanning Tree', size=16);
+                   plt.show()
+               """
 
         from sklearn.datasets import make_blobs
         
@@ -821,36 +923,52 @@ class ClusterAnalysis:
         #self.plot_pca(0, [0])
         
         
-        #plt.scatter(X[:, 0], X[:, 1], c='lightblue');
-        #plt.show()
+
+
+
+
+
 
         from mst_clustering import MSTClustering
+
         model = MSTClustering(cutoff_scale=7, approximate=False)
-        #labels = model.fit_predict(X)
-        labels = model.fit_predict(self.train_features_set_scaled)
+
+        labels = model.fit_predict(self.train_data_selected_features_set_scaled)
         
         #plt.scatter(X[:, 0], X[:, 1], c=labels, cmap='rainbow');
         #plt.show()
+
+
+
 
         #plot_mst(model)
 
         #print(labels)
         #self.plot_pca(len(np.unique(labels)), labels)
         #print(model.get_graph_segments(True))
+        # Допустим, segments содержит две строки — начало и конец рёбер в 16D пространстве:
+        # segments[0] — это координаты начала рёбер, segments[1] — координаты конца рёбер
+
 
         segments = model.get_graph_segments(True)
-        
-        def segments_from_features_space_to_pca (segments):
-            
+
+        def segments_from_features_space_to_principal_component_space (segments):            
             start_points_list = []
             end_points_list = []
-           
+
     
             for i in range(len(segments)):
                 start_points_list.append(segments[i][0])
                 end_points_list.append(segments[i][1])
 
-            
+            """import numpy as np
+                a = np.array((1,2,3))
+                b = np.array((2,3,4))
+                np.column_stack((a,b))
+                array([[1, 2],
+                        [2, 3],
+                        [3, 4]])"""
+
             start_points = np.column_stack(start_points_list)  # Начальные точки рёбер
             end_points = np.column_stack(end_points_list)      # Конечные точки рёбер
 
@@ -867,11 +985,8 @@ class ClusterAnalysis:
 
             return start_points_pca, end_points_pca
 
-        start_points_pca, end_points_pca = segments_from_features_space_to_pca(segments)
+        start_points_pca, end_points_pca = segments_from_features_space_to_principal_component_space(segments)
 
-
-
-        
       
         # Создаем 3D-график
         fig = plt.figure()
@@ -896,7 +1011,7 @@ class ClusterAnalysis:
 
         plt.show()
 
-      
+
 
         
         # create some data with four clusters
@@ -910,124 +1025,7 @@ class ClusterAnalysis:
         # plot the results
         plt.scatter(X[:, 0], X[:, 1], c=labels, cmap='rainbow')
         plt.show()
-        
-    def minimal_spanning_tree_clustering2(self):
 
-        
-        import seaborn as sns; sns.set()
-
-        # matplotlib 1.4 + numpy 1.10 produces warnings; we'll filter these
-        import warnings; warnings.filterwarnings('ignore', message='elementwise')
-
-        """
-        def plot_mst(model, cmap='rainbow'):
-               
-            #Utility code to visualize a minimum spanning tree
-            X = model.X_fit_
-
-             # Применяем PCA для проекции в пространство трех главных компонент
-            pca = PCA(n_components=3)
-            X_pca = pca.fit_transform(X)
-
-             # Создаем 3D-график
-            fig = plt.figure(figsize=(16, 8))
-            ax1 = fig.add_subplot(121, projection='3d' )
-            ax2 = fig.add_subplot(122, projection='3d')
-    
-            #fig, ax = plt.subplots(1, 2, figsize=(16, 6), sharex=True, sharey=True)
-            for axi, full_graph, colors in zip([ax1, ax2], [True, False], ['lightblue', model.labels_]):
-                segments = model.get_graph_segments(full_graph=full_graph)
-                print(segments)
-                #axi.plot(segments[0], segments[1], '-k', zorder=1, lw=1)
-                #axi.scatter(X[:, 0], X[:, 1], c=colors, cmap=cmap, zorder=2)
-                #axi.axis('tight')
-                 # Для каждого сегмента рисуем линию в пространстве PCA
-                for seg in segments:
-                    p1 = X_pca[seg[0]]
-                    p2 = X_pca[seg[1]]
-                    ax.plot([p1[0], p2[0]], [p1[1], p2[1]], [p1[2], p2[2]], '-k', zorder=1, lw=1)
-        
-                # Рисуем точки
-                scatter = ax.scatter(X_pca[:, 0], X_pca[:, 1], X_pca[:, 2], c=colors, cmap=cmap, zorder=2)
-                ax.set_title('Full MST' if full_graph else 'Trimmed MST', size=16)
-                    
-                #ax[0].set_title('Full Minimum Spanning Tree', size=16)
-                #ax[1].set_title('Trimmed Minimum Spanning Tree', size=16);
-            plt.show()
-        """
-        from sklearn.datasets import make_blobs
-        
-        #X, y = make_blobs(200, centers=4, random_state=42)
-
-        #self.plot_pca(0, [0])
-        
-        
-        #plt.scatter(X[:, 0], X[:, 1], c='lightblue');
-        #plt.show()
-
-        from mst_clustering import MSTClustering
-        model = MSTClustering(cutoff_scale=2, approximate=False)
-        #labels = model.fit_predict(X)
-        labels = model.fit_predict(self.train_features_set_scaled)
-        #plt.scatter(X[:, 0], X[:, 1], c=labels, cmap='rainbow');
-        #plt.show()
-
-        #plot_mst(model)
-
-        #print(labels)
-        #print(model.get_graph_segments(True))
-        #self.plot_pca(len(np.unique(labels)), labels)
-
-        # Допустим, segments содержит две строки — начало и конец рёбер в 16D пространстве:
-        # segments[0] — это координаты начала рёбер, segments[1] — координаты конца рёбер
-        start_points_list = []
-        end_points_list = []
-        segments = model.model.get_graph_segments(True)
-        print(len(segments))
-        for i in len(segments):
-            start_points_list.append(segments[i][0])
-            end_points_list.append(segments[i][1])
-
-        
-        start_points = np.column_stack(start_points_list)  # Начальные точки рёбер
-        end_points = np.column_stack(end_points_list)      # Конечные точки рёбер
-
-        # Объединяем начало и конец рёбер для общей проекции
-        all_points = np.vstack([start_points, end_points])  # Все точки для PCA
-
-        # Применяем PCA для проекции из 16D в 3D
-        pca = PCA(n_components=3)
-        all_points_pca = pca.fit_transform(all_points)
-
-        # Разделяем обратно на начальные и конечные точки рёбер в новом 3D-пространстве
-        start_points_pca = all_points_pca[:len(start_points)]
-        end_points_pca = all_points_pca[len(start_points):]
-
-
-
-        # Создаем 3D-график
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-
-        # Проходим по всем сегментам и рисуем линии в 3D-пространстве PCA
-        for i in range(len(start_points_pca)):
-            x_start, y_start, z_start = start_points_pca[i]
-            x_end, y_end, z_end = end_points_pca[i]
-            
-            # Рисуем ребро между начальной и конечной точкой сегмента
-            ax.plot([x_start, x_end], [y_start, y_end], [z_start, z_end], 'k-', lw=1)
-
-        # Добавляем точки для визуализации вершин
-        ax.scatter(start_points_pca[:, 0], start_points_pca[:, 1], start_points_pca[:, 2], c='r', s=50)
-        ax.scatter(end_points_pca[:, 0], end_points_pca[:, 1], end_points_pca[:, 2], c='b', s=50)
-
-        # Настраиваем оси
-        ax.set_xlabel('PCA Component 1')
-        ax.set_ylabel('PCA Component 2')
-        ax.set_zlabel('PCA Component 3')
-
-        plt.show()
-            
     
 if __name__ == '__main__':
     """
@@ -1057,20 +1055,38 @@ if __name__ == '__main__':
     """
     
 
-    ClAnalysis = ClusterAnalysis(r'datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx', 'Male')
-    ClAnalysis.ages_distribution()
-  
-    ClAnalysis.scale()
-    ClAnalysis.plot_pca(ClAnalysis.train_features_set_scaled)
-    #ClAnalysis.elbow()
-    ClAnalysis.kmeans_clustering_factory()
-    #ClAnalysis.cmeans_factory()
+    #ClAnalysisMale = ClusterAnalysis(r'datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx', 'Male', True, Dataset.Gematology)
 
+    """
+    ClAnalysisMale.ages_distribution()
+    ClAnalysisMale.scale()
+    ClAnalysisMale.plot_pca(ClAnalysisMale.train_data_selected_features_set_scaled)
+    ClAnalysisMale.elbow()
+    ClAnalysisMale.kmeans_clustering_factory()
+    ClAnalysisMale.cmeans_factory()
+    """
+    #ClAnalysisBonesFemale = ClusterAnalysis(r'datasets/bones_filled_empty_by_polynomial_method_3.xlsx', 'Female', False, Dataset.Bones)
+    #ClAnalysisBonesFemale.scale()
+    #ClAnalysisBonesFemale.plot_pca(ClAnalysisBonesFemale.train_data_sfs_scaled)
+    #ClAnalysisMale.elbow()
+    #ClAnalysisMale.kmeans_clustering_factory()
+    #ClAnalysisMale.cmeans_factory()
 
+    ClAnalysisBiochemistry = ClusterAnalysis(r'datasets/biochemistry_filled_empty_by_polynomial_method_3.xlsx', 'Biochemistry', False,
+                                            Dataset.Biochemistry)
+    ClAnalysisBiochemistry.scale()
+    ClAnalysisBiochemistry.plot_pca(ClAnalysisBiochemistry.train_data_sfs_scaled)
+    #print(ClAnalysis.train_data_selected_features_set_scaled)
+    #ClAnalysisMale.minimal_spanning_tree_clustering()
 
-    #print(ClAnalysis.train_features_set_scaled)
-    ClAnalysis.minimal_spanning_tree_clustering()
-  
+    #ClAnalysisFemale = ClusterAnalysis(r'datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx', 'Female')
+    #ClAnalysisFemale.ages_distribution()
+    #ClAnalysisFemale.scale()
+    #ClAnalysisFemale.plot_pca(ClAnalysisFemale.train_data_selected_features_set_scaled)
+    #ClAnalysisFemale.elbow()
+    #ClAnalysisFemale.kmeans_clustering_factory()
+    #ClAnalysisFemale.cmeans_factory()
+
     #ClAnalysis.kmeans_clustering()
     
     #ClAnalysis.biological_age((24.1, 391, 78, 9.7, 14.4, 15.7, 0.45, 149, 66.4,	5.13, 8, 29.9, 3.7, 0.218, 226, 5))
@@ -1091,7 +1107,7 @@ wine_data = datasets.load_wine(as_frame=True)"""
 """
 url = "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
 
-# load dataset into Pandas DataFrame
+# load dataset into Pandas data
 df = pd.read_csv(url, names=['sepal length','sepal width','petal length','petal width','target'])"""
 
 #Dataset

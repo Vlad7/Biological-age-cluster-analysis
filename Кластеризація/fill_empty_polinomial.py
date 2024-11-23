@@ -3,29 +3,18 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from openpyxl import load_workbook
+import features as ft
 
+dataset_attributes = ['Age']
+
+dataset_attributes.extend((ft.features_biochemistry_all))
+print("All features: " + str(ft.features_biochemistry_all))
 
 
 
 df_male = pd.read_excel('datasets/gemogramma_sorted_biomarker_columns_2.xlsx',
                           sheet_name='Male',
-                          names=['Age',
-                                 'MCH',
-                                 'MCHC',
-                                 'MCV',
-                                 'MPV',
-                                 'PDW',
-                                 'RDW',
-                                 'Hematocrit',
-                                 'Hemoglobin',
-                                 'Granulocytes',
-                                 'Red blood cells',
-                                 'Leukocytes',
-                                 'Lymphocytes',
-                                 'Monocyte',
-                                 'Thrombocrit',
-                                 'Thrombocytes',
-                                 'ESR'])
+                          names=dataset_attributes)
 
 print('Data was imported')
 

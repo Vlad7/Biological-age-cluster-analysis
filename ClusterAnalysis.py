@@ -2,25 +2,41 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler    #Standardize features by removing the mean and scaling to unit variance.
-from sklearn.decomposition import PCA
+
 #import webcolors as wc
 import skfuzzy as fuzz
 from sklearn.model_selection import train_test_split
 from sklearn.cluster import KMeans
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.spatial.distance import cdist
-import gematology_features as gf
+import features as ft
 import sys
+from enum import Enum
 
+import pca_lib as pl
 
+class Dataset(Enum):
+    Gematology = 1
+    Biochemistry = 2
+    Bones = 3
 
 
 class ClusterAnalysis:
     
-    def __init__ (self, path, sex, is_hight_correlated_features=True):
+    def __init__ (self, path, sex, is_hight_correlated_features=True, datasettype=Dataset.Gematology):
 
         dataset_attributes = ['Age']
-        dataset_attributes.extend(gf.features_all)
+
+        if datasettype == Dataset.Gematology:
+            dataset_attributes.extend(ft.features_gematology_all)
+            print("All features: " + str(ft.features_gematology_all))
+
+        elif datasettype == Dataset.Biochemistry:
+            dataset_attributes.extend((ft.features_biochemistry_all))
+            print("All features: " + str(ft.features_biochemistry_all))
+        elif datasettype == Dataset.Bones:
+            dataset_attributes.extend((ft.features_bones_all))
+            print("All features: " + str(ft.features_bones_all))
 
         try:
             self.data = pd.read_excel(path,
@@ -33,38 +49,38 @@ class ClusterAnalysis:
             print('File was not found!')
             sys.exit(0)
 
-        print ("All features: " + str(gf.features_all))
+
+        selected_attributes = ['Age']
+
+
+        #!!!
+        if is_hight_correlated_features:
+            # Select feature labels that hight correlates with age
+            selected_attributes.extend(ft.features_gematology_hight_correlation_with_age)
+        else:
+            selected_attributes = dataset_attributes
 
         #Split dataset on train and test datasets with ages accordingly
         self.train_data, self.test_data, self.train_ages, self.test_ages = (
-            self.split_on_train_and_test_datasets(self.data, True))
+            self.split_on_train_and_test_datasets(self.data.loc[:, selected_attributes], True))
 
-        #Select feature labels that hight correlates with age
-        features = gf.features_hight_correlation_with_age
 
-        self.train_data_selected_features = None
-        self.test_data_selected_features = None
-
-        if is_hight_correlated_features:
-            # Separating out the features of interest from train_data
-            self.train_data_selected_features = self.train_data.loc[:, gf.features_hight_correlation_with_age]
-            self.test_data_selected_features = self.test_data.loc[:, gf.features_hight_correlation_with_age]
-
-        else:
-            self.train_data_selected_features = self.train_data.loc[:, gf.features_all]
-            self.test_data_selected_features = self.test_data.loc[:, gf.features_all]
 
         # Print train data with selected features
-        print(self.train_data_selected_features)
+        print(self.train_data)
 
         # Train ages
         print(self.train_ages)
 
 
-        # Biomarkers
-        self.scale()
+        # Biomarkers sfs = selected feature set
+        self.train_data_sfs_scaled = (
+        self.scale())
+        #self.train_data_sfs_scaled, self.test_data_sfs_scaled, self.train_ages_scaled, self.test_ages_scaled = (
+        #    self.scale(self.train_data, self.test_data, self.train_ages, self.test_ages))
 
-       # print(len(self.train_data_selected_features))
+
+    #def find_bio_age(self, train_dataframe):
 
 
 
@@ -73,7 +89,12 @@ class ClusterAnalysis:
         # Scaling
 
         std_scaler = StandardScaler()
-        self.train_data_selected_features_set_scaled = std_scaler.fit_transform(self.train_data_selected_features.values)
+        train_data_sfs_scaled = std_scaler.fit_transform(self.train_data.values)
+        #test_data_sfs_scaled = std_scaler.fit_transform(self.test_data.values)
+        #train_ages_scaled = std_scaler.fit_transform(self.train_ages.values)
+        #test_ages_scaled = std_scaler.fit_transform(self.test_ages.values)
+
+        return train_data_sfs_scaled#, test_data_sfs_scaled, train_ages_scaled, test_ages_scaled
         
     def move_age_bin_column_to_after_age_position(self, data):
 
@@ -287,216 +308,9 @@ class ClusterAnalysis:
     ###################################################################
     ###################################################################
    
-    def pca(self, features_set, n_components_=2):
-        """ PCA
-
-            input:
-                - features_set - data with features
-                - n_components - number of principal components
-            output:
-                principal components
-        """
-        
-        # Principal component analisys for 3 components
-        pca = PCA(n_components=n_components_)
-        principalComponents = pca.fit_transform(features_set)
-
-        sufixes = []
-
-        if n_components_ == 2:
-            sufixes.append("2nd")
-        elif n_components_ == 3:
-            sufixes.append("3rd")
-        else:
-            raise Exception("Number of components must be 2 or 3!")
-            
-                
-        print("PCA explained variance ratio (1st, " + ', '.join(sufixes) + "): ", pca.explained_variance_ratio_)
-
-        return principalComponents
 
 
 
-
-
-
-
-
-
-
-
-
-
-    def plot_pca(self, features_set, membership_matrix=None, centers=None, show_indexes=False, show_ages=False):
-        """ Principal component analisys for plot clustered data
-
-            input:
-                - features_set - data with features
-                - labels = labels from classified class
-                - show_indexes - show texts of indexes near data points on plot
-
-            method complete!!! maybe same scale of different axis
-        """
-        # Create data with principal components
-        principalDf = pd.DataFrame(data = self.pca(features_set, 3)
-             , columns = ['principal component 1', 'principal component 2', 'principal component 3'])
-
-        labels = None
-
-        if membership_matrix is None:
-
-            # Transform labels list to np.array and numeration from 1
-            labels = np.array([0] * len(self.train_data_selected_features))
-
-        elif membership_matrix.ndim==1:
-
-            labels = membership_matrix
-
-        else:
-
-            labels = np.argmax(membership_matrix, axis=0)
-
-        labels = np.array(labels) + 1
-
-
-        # Create target data with one column with labels and named 'Age category
-        target = pd.DataFrame(data=labels, columns = ['Age category'])
-
-        """
-        #Classification with only one class
-        #target = pd.data(data=np.array(['0']*len(self.train_ages.values)).transpose(), columns = ['Age category'])
-        """
-        
-        #Create data from concatenation of two along x axis
-        finalDf = pd.concat([principalDf, target], axis = 1)
-
-        """
-        #finalDf.index = np.arange(1, len(finalDf) + 1)
-        """
-
-        
-        # Установить параметр для вывода всех строк
-        pd.set_option('display.max_rows', None)
-        pd.set_option('display.max_columns', None)
-
-        # Отображение данных на графике
-        fig = plt.figure(figsize = (8,8))
-        ax = fig.add_subplot(projection='3d') 
-        ax.set_xlabel('Principal Component 1', fontsize = 15)
-        ax.set_ylabel('Principal Component 2', fontsize = 15)
-        ax.set_zlabel('Principal Component 3', fontsize = 15)
-        ax.set_title('3 component PCA', fontsize = 20)
-
-        """
-        #targets = ['Iris-setosa', 'Iris-versicolor', 'Iris-virginica']
-        #colors = ['r', 'g', 'b']
-        """
-        
-        # Alphabeta of classes
-        
-        #targets = np.unique(labels)
-        targets = set(labels)
-
-        """
-        #targets = [0, 1, 2, 3, 4]
-        #colors = ['b', 'y','r','g','c']
-        """
-        
-        # Взять из палитры len(targets) цветов.
-        colors = plt.get_cmap('tab10', len(targets)).colors  # Используем палитру 'tab10'
-
-        """
-        #for class_ in targets:
-        #    colors.append(wc.rgb_to_hex((int(255 * class_ / len (targets)), int(255 * class_ / len (targets)), int(255 * class_ / len (targets)))))
-        """
-        print(targets)
-
-
-        for target, color in zip(targets,colors):
-       
-            # Select all indexes of humans with targeting classes
-        
-            indicesToKeep = finalDf['Age category'] == target
-     
-            ax.scatter(finalDf.loc[indicesToKeep, 'principal component 1']
-                       , finalDf.loc[indicesToKeep, 'principal component 2']
-                       , finalDf.loc[indicesToKeep, 'principal component 3']
-                       , c = color
-                       , s = 50)
-
-
-
-
-
-            if (show_indexes):
-                # Добавляем метки с номерами объектов рядом с точками
-                for i in finalDf[indicesToKeep].index:
-                    ax.text(finalDf.loc[i, 'principal component 1'],
-                            finalDf.loc[i, 'principal component 2'],
-                            finalDf.loc[i, 'principal component 3'],
-                    str(i),  # Здесь str(i) будет выводить номер объекта (индекс)
-                    fontsize=9, color='black')
-
-            """
-            if (show_ages):
-                # Добавляем метки с возрастами объектов рядом с точками
-                for i in finalDf[indicesToKeep].index:
-                     ax.text(finalDf.loc[self.test_ages[i], 'principal component 1'],
-                            finalDf.loc[self.test_ages[i], 'principal component 2'],
-                            finalDf.loc[self.test_ages[i], 'principal component 3'],
-                    str(i),  # Здесь str(i) будет выводить номер объекта (индекс)
-                    fontsize=9, color='black')
-            """
-
-            """
-            # Mark the center of each fuzzy cluster
-            if centers is not None:
-                
-                for pt in centers:
-                    pca_pt = self.pca(pt, 3)
-                    ax.plot(pca_pt[0, 0], pca_pt[0, 1], pca_pt[0, 2], 'rs')
-            
-            """
-
-
-
-        """
-        for i, point in enumerate(features_set):
-            # Определение цвета на основе принадлежности кластерам
-            color = np.dot(u[i],
-                           [[1, 0, 0], [0, 1, 0], [0, 0, 1]])  # RGB на основе степеней принадлежности
-            ax.plot(point[0], point[1], marker='o', markersize=5, color=color)
-        
-        # Отображение центров кластеров
-        ax.scatter(centers[:, 0], centers[:, 1], marker='x', s=100, c='black', label='Кластерные центры')
-        plt.legend()
-        """
-                
-        # Генерируем подписи для каждого класса с использованием list comprehension
-        if len (targets) > 1:
-            labels = [f'{target} class' for target in targets]
-            ax.legend(labels)
-
-        """
-              for j in range(classes_number):
-
-                  # : (двоеточие) — означает, что мы берем все строки (или весь диапазон данных по первой оси).
-                  plt.plot(data[:, 0][clusters == j], data[:, 1][clusters == j], 'o', label=f'cluster{j}')
-
-              plt.legend()
-              
-              """
-
-        # plt.scatter(self.data['MCH'], self.data['MCHC'], c=kmeans.labels_)
-        # plt.show()
-
-        ax.grid()
-
-        ax.set_xlim([finalDf['principal component 1'].min(), finalDf['principal component 1'].max()])
-        ax.set_ylim([finalDf['principal component 2'].min(), finalDf['principal component 2'].max()])
-        ax.set_zlim([finalDf['principal component 3'].min(), finalDf['principal component 3'].max()])
-
-        plt.show()
 
 
 
@@ -596,7 +410,7 @@ class ClusterAnalysis:
         print(indexes)
         print(clusters_bio_age)
 
-        self.plot_pca(data, labels, centers, show_ages=True)
+        pl.plot_pca(data, labels, centers, show_ages=True)
 
         # indexes = self.clusters_patient_indexes(kmeans.labels_)
         # self.clusters_bio_age(self.train_ages, indexes)
@@ -769,7 +583,7 @@ class ClusterAnalysis:
         # u - Степени принадлежности каждого объекта к каждому кластеру
         cntr, u = self.cmeans_clustering(data, clasters_number)
 
-        self.plot_pca(data, u, cntr, show_indexes=False, show_ages=False)
+        pl.plot_pca(data, u, cntr, show_indexes=False, show_ages=False)
 
         # Assign pacients to clusters based on maximum membership,
         # Result: len(clusters) == pacients count, element at index in "clusters" == cluster number
@@ -1036,24 +850,34 @@ if __name__ == '__main__':
     """
     
 
-    ClAnalysisMale = ClusterAnalysis(r'datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx', 'Male')
-    #ClAnalysisMale.ages_distribution()
-    #ClAnalysisMale.scale()
-    #ClAnalysisMale.plot_pca(ClAnalysisMale.train_data_selected_features_set_scaled)
+    #ClAnalysisMale = ClusterAnalysis(r'datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx', 'Male', True, Dataset.Gematology)
+
+    """
+    ClAnalysisMale.ages_distribution()
+    ClAnalysisMale.scale()
+    ClAnalysisMale.plot_pca(ClAnalysisMale.train_data_selected_features_set_scaled)
+    ClAnalysisMale.elbow()
+    ClAnalysisMale.kmeans_clustering_factory()
+    ClAnalysisMale.cmeans_factory()
+    """
+    ClAnalysisBonesFemale = ClusterAnalysis(r'datasets/bones_filled_empty_by_polynomial_method_3.xlsx', 'Female', False, Dataset.Bones)
+    ClAnalysisBonesFemale.scale()
+    pl.plot_pca(ClAnalysisBonesFemale.train_data_sfs_scaled)
     #ClAnalysisMale.elbow()
     #ClAnalysisMale.kmeans_clustering_factory()
     #ClAnalysisMale.cmeans_factory()
 
-    input = ("")
-
-
+    #ClAnalysisBiochemistry = ClusterAnalysis(r'datasets/biochemistry_filled_empty_by_polynomial_method_3.xlsx', 'Biochemistry', False,
+    #                                            Dataset.Biochemistry)
+    #ClAnalysisBiochemistry.scale()
+    #pl.plot_pca(ClAnalysisBiochemistry.train_data_sfs_scaled)
     #print(ClAnalysis.train_data_selected_features_set_scaled)
     #ClAnalysisMale.minimal_spanning_tree_clustering()
 
     #ClAnalysisFemale = ClusterAnalysis(r'datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx', 'Female')
     #ClAnalysisFemale.ages_distribution()
     #ClAnalysisFemale.scale()
-    #ClAnalysisFemale.plot_pca(ClAnalysisFemale.train_data_selected_features_set_scaled)
+    #pl.plot_pca(ClAnalysisFemale.train_data_selected_features_set_scaled)
     #ClAnalysisFemale.elbow()
     #ClAnalysisFemale.kmeans_clustering_factory()
     #ClAnalysisFemale.cmeans_factory()
