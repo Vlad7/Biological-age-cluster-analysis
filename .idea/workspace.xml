@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="24bd9aea-754d-405c-9ac3-89d5f23f4a7c" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/fill_empty_polinomial_NHANES.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/spss.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.name" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.name" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/GClustering.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/GClustering.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ClusterAnalysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/ClusterAnalysis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/1.xls" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/Correlation matrix.stw" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/From internet/Dataset 1/Heart Disease Dataset.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/From internet/Dataset 1/heart.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/From internet/Excel/NHANES3_HDTrain.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/From internet/NHANES3.docx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/From internet/NHANES3_HDTrain.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/From internet/liver+disorders.zip" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/From internet/liver+disorders/Index" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/From internet/liver+disorders/bupa.data" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/From internet/liver+disorders/bupa.names" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/From internet/liver+disorders/costs/Index" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/From internet/liver+disorders/costs/bupa-liver.README" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/From internet/liver+disorders/costs/bupa-liver.cost" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/From internet/liver+disorders/costs/bupa-liver.delay" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/From internet/liver+disorders/costs/bupa-liver.expense" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/From internet/liver+disorders/costs/bupa-liver.group" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/From internet/liver+disorders/noteDuplicates.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/Imported.stw" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/biochemistry_749 чол. + кореляційна матриця.xls" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/biochemistry_filled_empty_by_polynomial_method_3.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/biochemistry_sorted.xls" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/biochemistry_sorted.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/bones_filled_empty_by_polynomial_method_3.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/gemogramma_1.xls" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/gemogramma_filled_empty_by_polynomial_method [3].xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/gemogramma_filled_empty_by_polynomial_method.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/gemogramma_filled_empty_by_polynomial_method_3.xls" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/gemogramma_filled_polynomial.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/gemogramma_sorted_biomarker_columns_2.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/~$gemogramma_sorted_biomarker_columns_2.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/datasets/Пояснення.docx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/features.py" beforeDir="false" afterPath="$PROJECT_DIR$/features.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pca_lib.py" beforeDir="false" afterPath="$PROJECT_DIR$/pca_lib.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 5
+}</component>
+  <component name="ProjectId" id="2pUNSlQgE4zv3wIQxqZlHfuXTEu" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.ClusterAnalysis.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
+  }
+}</component>
+  <component name="RunManager">
+    <configuration name="ClusterAnalysis" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="GClustering" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/ClusterAnalysis.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.ClusterAnalysis" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-python-sdk-fb887030ada0-aa17d162503b-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-243.21565.199" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="24bd9aea-754d-405c-9ac3-89d5f23f4a7c" name="Changes" comment="" />
+      <created>1732816696076</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1732816696076</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/fill_empty_polinomial_NHANES.py</url>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>

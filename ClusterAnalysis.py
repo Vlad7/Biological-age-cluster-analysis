@@ -9,96 +9,144 @@ from sklearn.model_selection import train_test_split
 from sklearn.cluster import KMeans
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.spatial.distance import cdist
+
+import features
 import features as ft
 import sys
 from enum import Enum
 
 import pca_lib as pl
 
+
+
 class Dataset(Enum):
-    Gematology = 1
-    Biochemistry = 2
-    Bones = 3
+    """Type of dataset"""
+    Biochemistry = 1
+    Bones = 2
+    Gematology = 3
+    NHANESBiochemistry = 4
+
+class Sex (Enum):
+    """Sex of persons in dataset"""
+    Both = 1
+    Female = 2
+    Male = 3
+
 
 
 class ClusterAnalysis:
     
-    def __init__ (self, path, sex, is_hight_correlated_features=True, datasettype=Dataset.Gematology):
+    def __init__ (self, path, sex, hight_correlated_features=None, datasettype=Dataset.Biochemistry):
+        """Constructor for cluster analysis
 
+        :param path: path to file with database
+        :param sex:  sex of persons in database
+        :param is_hight_correlated_features:
+        :param datasettype: type of dataset
+        """
+        
+        #First attribute - Age
         dataset_attributes = ['Age']
-
-        if datasettype == Dataset.Gematology:
+        
+        if datasettype == Dataset.Biochemistry:
+            # Add all attributes from biochemistry
+            dataset_attributes.extend((ft.features_biochemistry_all))
+            
+            print("All features: " + str(ft.features_biochemistry_all))
+            
+        elif datasettype == Dataset.Bones:
+            # Add all attributes from bones
+            dataset_attributes.extend((ft.features_bones_all))
+                                      
+            print("All features: " + str(ft.features_bones_all))
+            
+        elif datasettype == Dataset.Gematology:
+            # Add all attributes from gematology            
             dataset_attributes.extend(ft.features_gematology_all)
+            
             print("All features: " + str(ft.features_gematology_all))
 
-        elif datasettype == Dataset.Biochemistry:
-            dataset_attributes.extend((ft.features_biochemistry_all))
-            print("All features: " + str(ft.features_biochemistry_all))
-        elif datasettype == Dataset.Bones:
-            dataset_attributes.extend((ft.features_bones_all))
-            print("All features: " + str(ft.features_bones_all))
+        elif datasettype == Dataset.NHANESBiochemistry:
+            # Add all attributes from NHANES biochemistry
+            dataset_attributes.extend(ft.features_NHANES3_HDTrain_biochemistry)
+
+            print("All features: " + str(ft.features_NHANES3_HDTrain_biochemistry))
+
+        sexs = ""
+
+        if sex == Sex.Both:
+            sexs = "Both sexes"
+        elif sex == Sex.Female:
+            sexs = "Female"
+        elif sex == Sex.Male:
+            sexs = "Male"
 
         try:
             self.data = pd.read_excel(path,
-                            sheet_name=sex,
+                            sheet_name=sexs,
                             names=dataset_attributes)
 
-            print('data was imported!')
+            print('Data was imported!')
 
         except FileNotFoundError:
             print('File was not found!')
             sys.exit(0)
 
+        #Selected biomarkers
+        selected_biomarkers = None
 
-        selected_attributes = ['Age']
-
-
-        #!!!
-        if is_hight_correlated_features:
+        if hight_correlated_features != None:
             # Select feature labels that hight correlates with age
-            selected_attributes.extend(ft.features_gematology_hight_correlation_with_age)
+            selected_biomarkers = ['Age']
+            selected_biomarkers.extend(hight_correlated_features)
         else:
-            selected_attributes = dataset_attributes
+            selected_biomarkers = dataset_attributes
+
+        selected_data = self.data.loc[:, selected_biomarkers]
 
         #Split dataset on train and test datasets with ages accordingly
         self.train_data, self.test_data, self.train_ages, self.test_ages = (
-            self.split_on_train_and_test_datasets(self.data.loc[:, selected_attributes], True))
-
-
+            self.split_on_train_and_test_datasets(selected_data, age_bins=True))
 
         # Print train data with selected features
+        print("Training data:")
         print(self.train_data)
 
         # Train ages
+        print("Training ages:")
         print(self.train_ages)
 
 
         # Biomarkers sfs = selected feature set
-        self.train_data_sfs_scaled = (
-        self.scale())
+        self.train_data_scaled = self.scale(self.train_data.values)
+        self.test_data_scaled = self.scale(self.test_data.values)
+
+        # train_ages_scaled = std_scaler.fit_transform(self.train_ages.values)
+        # test_ages_scaled = std_scaler.fit_transform(self.test_ages.values)
         #self.train_data_sfs_scaled, self.test_data_sfs_scaled, self.train_ages_scaled, self.test_ages_scaled = (
         #    self.scale(self.train_data, self.test_data, self.train_ages, self.test_ages))
 
 
-    #def find_bio_age(self, train_dataframe):
+    def scale (self, dataframe):
+        """Scaling method
 
-
-
-    def scale (self):
-        
+        :param dataframe: dataframe to scale
+        :return: scaled_data
+        """
         # Scaling
 
         std_scaler = StandardScaler()
-        train_data_sfs_scaled = std_scaler.fit_transform(self.train_data.values)
-        #test_data_sfs_scaled = std_scaler.fit_transform(self.test_data.values)
-        #train_ages_scaled = std_scaler.fit_transform(self.train_ages.values)
-        #test_ages_scaled = std_scaler.fit_transform(self.test_ages.values)
+        data_scaled = std_scaler.fit_transform(dataframe)
 
-        return train_data_sfs_scaled#, test_data_sfs_scaled, train_ages_scaled, test_ages_scaled
+        return data_scaled
         
     def move_age_bin_column_to_after_age_position(self, data):
+        """Move age bin column from the end to position after age
 
-        # Впевнимося, що Age_bin перемыщається одразу після Age
+        :param data: data - dataframe
+        :return: data - datafreme with moved column
+        """
+        # Впевнимося, що Age_bin переміщається одразу після Age
         columns = list(data.columns)
         age_index = columns.index("Age")
         columns.remove("AgeBin")  # Прибираємо Age_bin з поточної позиції
@@ -357,13 +405,16 @@ class ClusterAnalysis:
             input: features data
                    clusters_number
 
-            output: clusters_labels
+            output: kmeans.cluster_centers_ - centers of clusters as result of kmeans
+                    kmeans.labels_          - labels of clusters for each person
 
+            Example:
+                x = [4, 5, 10, 4, 3, 11, 14 , 6, 10, 12]
+                y = [21, 19, 24, 17, 16, 25, 24, 22, 21, 21]
+                data = list(zip(x, y))
         """
 
-        # x = [4, 5, 10, 4, 3, 11, 14 , 6, 10, 12]
-        # y = [21, 19, 24, 17, 16, 25, 24, 22, 21, 21]
-        # data = list(zip(x, y))
+        # K-means++ - покращений алгоритм K-means з ініціалізацією центрів
 
         kmeans = KMeans(n_clusters=clusters_number, init='k-means++')
         kmeans.fit(data)
@@ -377,7 +428,7 @@ class ClusterAnalysis:
 
         """Доробити алгоритм k-means"""
 
-        data = self.train_data_selected_features_set_scaled
+        data = self.train_data_scaled
 
         clasters_number = 0
 
@@ -568,7 +619,7 @@ class ClusterAnalysis:
 
     def cmeans_factory(self):
 
-        data = self.train_data_selected_features_set_scaled
+        data = self.train_data_scaled
 
         clasters_number = 0
 
@@ -848,39 +899,47 @@ if __name__ == '__main__':
     plt.ylabel('Inertia')
     plt.show()
     """
-    
 
-    #ClAnalysisMale = ClusterAnalysis(r'datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx', 'Male', True, Dataset.Gematology)
+    path_to_biochemistry_dataset = r'../datasets/biochemistry_filled_empty_by_polynomial_method_3.xlsx'
+    path_to_bones_dataset = r'../datasets/bones_filled_empty_by_polynomial_method_3.xlsx'
+    path_to_gematology_dataset = r'../datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx'
+    path_to_NHANES_biochemistry = r'../datasets/biochemistryNHANES_filled_empty_by_polynomial_method_3.xlsx'
 
-    """
-    ClAnalysisMale.ages_distribution()
-    ClAnalysisMale.scale()
-    ClAnalysisMale.plot_pca(ClAnalysisMale.train_data_selected_features_set_scaled)
-    ClAnalysisMale.elbow()
-    ClAnalysisMale.kmeans_clustering_factory()
-    ClAnalysisMale.cmeans_factory()
-    """
-    ClAnalysisBonesFemale = ClusterAnalysis(r'datasets/bones_filled_empty_by_polynomial_method_3.xlsx', 'Female', False, Dataset.Bones)
-    ClAnalysisBonesFemale.scale()
-    pl.plot_pca(ClAnalysisBonesFemale.train_data_sfs_scaled)
+    ClAnalysisGematologyMale = ClusterAnalysis(path_to_gematology_dataset, Sex.Male,
+                                     features.features_gematology_hight_correlation_with_age, Dataset.Gematology)
+
+
+    #ClAnalysisGematologyMale.ages_distribution()
+    #ClAnalysisGematologyMale.scale()
+    pl.plot_pca(ClAnalysisGematologyMale.train_data_scaled)
     #ClAnalysisMale.elbow()
     #ClAnalysisMale.kmeans_clustering_factory()
     #ClAnalysisMale.cmeans_factory()
 
-    #ClAnalysisBiochemistry = ClusterAnalysis(r'datasets/biochemistry_filled_empty_by_polynomial_method_3.xlsx', 'Biochemistry', False,
-    #                                            Dataset.Biochemistry)
-    #ClAnalysisBiochemistry.scale()
-    #pl.plot_pca(ClAnalysisBiochemistry.train_data_sfs_scaled)
+
+    #ClAnalysisBonesFemale = ClusterAnalysis(path_to_bones_dataset, Sex.Female,
+    #                                        None, Dataset.Bones)
+    #ClAnalysisBonesFemale.scale()
+    #pl.plot_pca(ClAnalysisBonesFemale.train_data_scaled)
+    #ClAnalysisMale.elbow()
+    #ClAnalysisMale.kmeans_clustering_factory()
+    #ClAnalysisMale.cmeans_factory()
+
+    #ClAnalysisBiochemistryBoth = ClusterAnalysis(path_to_biochemistry_dataset, Sex.Both,
+    #                                             None, Dataset.Biochemistry)
+    #ClAnalysisBiochemistryBoth.scale()
+    #pl.plot_pca(ClAnalysisBiochemistryBoth.train_data_scaled)
     #print(ClAnalysis.train_data_selected_features_set_scaled)
     #ClAnalysisMale.minimal_spanning_tree_clustering()
 
+    #ClAnalysisNHANESBiochemistry = ClusterAnalysis(path_to_NHANES_biochemistry, Sex.Both, None, Dataset.NHANESBiochemistry)
     #ClAnalysisFemale = ClusterAnalysis(r'datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx', 'Female')
     #ClAnalysisFemale.ages_distribution()
     #ClAnalysisFemale.scale()
-    #pl.plot_pca(ClAnalysisFemale.train_data_selected_features_set_scaled)
+    #pl.plot_pca(ClAnalysisNHANESBiochemistry.train_data_scaled)
     #ClAnalysisFemale.elbow()
-    #ClAnalysisFemale.kmeans_clustering_factory()
-    #ClAnalysisFemale.cmeans_factory()
+    #ClAnalysisNHANESBiochemistry.kmeans_clustering_factory()
+    #ClAnalysisNHANESBiochemistry.cmeans_factory()
 
     #ClAnalysis.kmeans_clustering()
     

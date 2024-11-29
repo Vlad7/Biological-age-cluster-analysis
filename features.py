@@ -155,11 +155,25 @@ features_NHANES3_HDTrain_antropometry=[
     'weight',
 ]
 
-features_NHANES3_HDTrain_biochemical=[
+features_NHANES3_HDTrain_biochemistry=[
     'alp',
     'bun',
     'creat_umol',
     'glucose_mmol',
+    'phpfast',
+    'hdl',
+    'ldl',
+    'trig',
+    'totchol'
+]
+
+features_NHANES3_HDTrain_gematology=[
+    'lymph',
+    'mcv',
+    'monopa',
+    'rbc',
+    'rdw',
+    'wbc',
 ]
 
 class Feature(Enum):
