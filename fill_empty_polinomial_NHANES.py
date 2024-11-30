@@ -9,33 +9,37 @@ from enum import Enum
 import pca_lib as pl
 
 class Dataset(Enum):
-    IGerontology = 1
-    NHANES_HDTrain = 2
-    KNHANES = 3
+    GERONTOLOGY = 1
+    KNHANES = 2
+    NHANES = 3
 
+class DatasetNHANES(Enum):
+    NHANES3 = 1
+    NHANES3_HDTrain = 2
+    NHANES4 = 3
+    
 class DatasetType(Enum):
     """Type of dataset"""
-    Biochemistry = 1
-    Bones = 2
-    Gematology = 3
-    Antropometry = 4
+    Antropometry = 1
+    Biochemistry = 2
+    Bones = 3
+    Gematology = 4
 
+class LabelStatus(Enum):
+    before = 1
+    after = 2
 
-dataset_type = None
+def load_dataset(dataset_provider, dataset_name, attributes, sex):
 
+    dataset_attributes = []
 
-dataset_attributes = []
+    dataset_attributes.extend(attributes)
+    print("All features: " + str(attributes))
 
-dataset_attributes.extend((ft.features_NHANES3_HDTrain_all))
-print("All features: " + str(ft.features_NHANES3_HDTrain_all))
-
-
-def load_dataset(folder, dataset):
     try:
-        dataframe = pd.read_excel('../datasets/'+ folder + dataset,
-                                  sheet_name='Worksheet',
+        dataframe = pd.read_excel('../datasets/'+ dataset_provider +'/'+dataset_name + '/Excel/' + dataset_name + ' (biochemistry).xlsx',
+                                  sheet_name=sex,
                                   names=dataset_attributes)
-
         print('Data was imported!')
 
         return dataframe
@@ -44,9 +48,11 @@ def load_dataset(folder, dataset):
         print('File was not found!')
         sys.exit(0)
 
-def select_biochemical_biomarkers(dataframe):
+def select_biomarkers(dataframe, features_set):
+
+    #Age not age for gerontology
     selected_biomarkers = ['age']
-    selected_biomarkers.extend(ft.features_NHANES3_HDTrain_biochemistry)
+    selected_biomarkers.extend(features_set)
     dataframe = dataframe.loc[:, selected_biomarkers]
     return dataframe
 
@@ -69,7 +75,7 @@ def print_title(dataframe, sheet_name='MALE', status="before"):
 
 def select_ages(dataframe, age_lower=20, age_upper=30):
 
-    print_title(dataframe, "MALE", "before")
+    print_title(dataframe, "MALE", LabelStatus.before.name)
 
     dataframe = dataframe.dropna(subset=['age'])
 
@@ -81,6 +87,7 @@ def select_ages(dataframe, age_lower=20, age_upper=30):
     dataframe = dataframe.sort_values(by='age')
 
     return dataframe
+    
 
 def fill_empty_by_polynomial(dataframe):
 
@@ -94,7 +101,7 @@ def fill_empty_by_polynomial(dataframe):
 
     dataframe = dataframe.sort_values(by='age')                 # !!!!!!!!!!!!!!!
 
-    print_title(dataframe, "MALE", "after")
+    print_title(dataframe, "MALE", LabelStatus.after.name)
 
     return dataframe
 
@@ -107,37 +114,15 @@ def print_dataset(dataframe):
     print(dataframe)
 
 
-folder = None
-filename = None
+dataframe = load_dataset(Dataset.NHANES.name, DatasetNHANES.NHANES3_HDTrain.name, , 'Male')
+selected_biochemical_dataset = select_biomarkers(dataframe, ft.features_NHANES3_HDTrain_biochemistry_selected)
+selected_by_ages = select_ages(selected_biochemical_dataset, 20, 30)
+filled_by_polinomial = fill_empty_by_polynomial(selected_by_ages)
 
-dataset = Dataset.NHANES_HDTrain
-dataset_type = DatasetType.Biochemistry
+print_dataset(filled_by_polinomial)
 
-
-if dataset == Dataset.NHANES_HDTrain:
-    folder = 'From internet/Excel/'
-    filename = 'NHANES3_HDTrain.xlsx'
-
-def create_database(folder, filename):
-    dataframe = load_dataset(folder, dataset)
-    selected_biomarkers_dataset = select_biochemical_biomarkers(dataframe)
-    selected_by_ages = select_ages(selected_biomarkers_dataset, 20, 30)
-    filled_by_polinomial = fill_empty_by_polynomial(selected_by_ages)
-    print_dataset((filled_by_polinomial))
-
-
-
-
-# Загрузка существующего Excel-файла
-#path = "datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx"
-#book = load_workbook(path)
-
-dataset_type = 'biochemical'
 # Пишем DataFrame на существующий лист
-dataframe.to_excel("../datasets/From internet/Excel/Filled empty/"+dataset_type+"NHANES_filled_empty_by_polynomial_method_3.xlsx",
-                    sheet_name='Worksheet', index=False)
+dataframe.to_excel("../datasets/"+Dataset.NHANES.name+'/'+DatasetNHANES.NHANES3_HDTrain.name+"/Excel/Filled empty/"+ "NHANES3_HDTrain_biochemical_filled_empty_by_polynomial_method_male.xlsx",
+                    sheet_name='Male', index=False)
 
 
-dataframe = pd.read_excel('../datasets/From internet/Excel/NHANES3_HDTrain.xlsx',
-                                  sheet_name='Worksheet',
-                                  names=dataset_attributes)

@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-features_gematology_all=[
+gerontology_features_gematology_all=[
     'MCH',
     'MCHC',
     'MCV',
@@ -19,7 +19,7 @@ features_gematology_all=[
     'Thrombocytes',
     'ESR']
 
-features_bones_all=['BMI',
+gerontology_features_bones_all=['BMI',
                     'FRAX-all',
                     'FRAX-hip',
                     'Lumbar spine',
@@ -31,7 +31,7 @@ features_bones_all=['BMI',
                     'TBS'
 ]
 
-features_biochemistry_all=['Alkaline phosphatase',
+gerontology_features_biochemistry_all=['Alkaline phosphatase',
                            'AlT',
                            'AsT',
                            'Cholesterol',
@@ -50,7 +50,7 @@ features_biochemistry_all=['Alkaline phosphatase',
 
 # Pisaruk, that correlates most with age near 0.15
 
-features_gematology_hight_correlation_with_age = ['RDW',
+gerontology_features_gematology_hight_correlation_with_age = ['RDW',
     'Hematocrit',
     'Hemoglobin',
     'Thrombocytes',
@@ -148,14 +148,26 @@ features_NHANES3_HDTrain_all = [
     'phenoage_advance0'
 ]
 
-features_NHANES3_HDTrain_antropometry=[
-    'bmi',
-    'height',
-    'waist',
-    'weight',
+features_NHANES3_HDTrain_biochemistry=[
+    'albumin',
+    'albumin_gL'  
+    'alp',
+    'bun',
+    'creat',
+    'creat_umol',
+    'glucose',
+    'glucose_mmol',
+    'ttbl',
+    'glucose_fasting',
+    'insulin',
+    'phpfast',
+    'hdl',
+    'ldl',
+    'trig',
+    'totchol'
 ]
 
-features_NHANES3_HDTrain_biochemistry=[
+features_NHANES3_HDTrain_biochemistry_selected=[
     'alp',
     'bun',
     'creat_umol',
@@ -166,6 +178,15 @@ features_NHANES3_HDTrain_biochemistry=[
     'trig',
     'totchol'
 ]
+
+features_NHANES3_HDTrain_antropometry=[
+    'bmi',
+    'height',
+    'waist',
+    'weight',
+]
+
+
 
 features_NHANES3_HDTrain_gematology=[
     'lymph',
