@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-gerontology_features_gematology_all=[
+gerontology_gematology_all=[
     'MCH',
     'MCHC',
     'MCV',
@@ -19,7 +19,7 @@ gerontology_features_gematology_all=[
     'Thrombocytes',
     'ESR']
 
-gerontology_features_bones_all=['BMI',
+gerontology_bones_all=['BMI',
                     'FRAX-all',
                     'FRAX-hip',
                     'Lumbar spine',
@@ -31,7 +31,7 @@ gerontology_features_bones_all=['BMI',
                     'TBS'
 ]
 
-gerontology_features_biochemistry_all=['Alkaline phosphatase',
+gerontology_biochemistry_all=['Alkaline phosphatase',
                            'AlT',
                            'AsT',
                            'Cholesterol',
@@ -148,9 +148,9 @@ features_NHANES3_HDTrain_all = [
     'phenoage_advance0'
 ]
 
-features_NHANES3_HDTrain_biochemistry=[
+features_NHANES3_HDTrain_biochemistry_all=[
     'albumin',
-    'albumin_gL'  
+    'albumin_gL',
     'alp',
     'bun',
     'creat',
@@ -167,7 +167,7 @@ features_NHANES3_HDTrain_biochemistry=[
     'totchol'
 ]
 
-features_NHANES3_HDTrain_biochemistry_selected=[
+NHANES3_HDTrain_biochemistry_selected=[
     'alp',
     'bun',
     'creat_umol',

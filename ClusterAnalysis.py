@@ -46,7 +46,7 @@ class ClusterAnalysis:
         """
         
         #First attribute - Age
-        dataset_attributes = ['Age']
+        dataset_attributes = ['age']
         
         if datasettype == Dataset.Biochemistry:
             # Add all attributes from biochemistry
@@ -68,9 +68,9 @@ class ClusterAnalysis:
 
         elif datasettype == Dataset.NHANESBiochemistry:
             # Add all attributes from NHANES biochemistry
-            dataset_attributes.extend(ft.features_NHANES3_HDTrain_biochemistry)
+            dataset_attributes.extend(ft.NHANES3_HDTrain_biochemistry_selected)
 
-            print("All features: " + str(ft.features_NHANES3_HDTrain_biochemistry))
+            print("All features: " + str(ft.NHANES3_HDTrain_biochemistry_selected))
 
         sexs = ""
 
@@ -97,7 +97,7 @@ class ClusterAnalysis:
 
         if hight_correlated_features != None:
             # Select feature labels that hight correlates with age
-            selected_biomarkers = ['Age']
+            selected_biomarkers = ['age']
             selected_biomarkers.extend(hight_correlated_features)
         else:
             selected_biomarkers = dataset_attributes
@@ -148,7 +148,7 @@ class ClusterAnalysis:
         """
         # Впевнимося, що Age_bin переміщається одразу після Age
         columns = list(data.columns)
-        age_index = columns.index("Age")
+        age_index = columns.index("age")
         columns.remove("AgeBin")  # Прибираємо Age_bin з поточної позиції
         columns.insert(age_index + 1, "AgeBin")  # Вставляемо Age_bin одразу після Age
 
@@ -176,7 +176,7 @@ class ClusterAnalysis:
         # Розбиваємо на вікові біни
         bins = [20, 30, 40, 50, 60, 70, 80, 90]
         labels = ['20-30', '30-40', '40-50', '50-60', '60-70', '70-80', '80-90']
-        data['AgeBin'] = pd.cut(data['Age'], bins=bins, labels=labels)
+        data['AgeBin'] = pd.cut(data['age'], bins=bins, labels=labels)
 
         data = self.move_age_bin_column_to_after_age_position(data)
 
@@ -200,11 +200,11 @@ class ClusterAnalysis:
                 test_data = pd.concat([test_data, test_bin], axis=0)
 
         # Вхідні дані (біомаркери)
-        Xtrain = train_data.drop(['Age', 'AgeBin'], axis=1)
-        Xtest = test_data.drop(['Age', 'AgeBin'], axis=1)
+        Xtrain = train_data.drop(['age', 'AgeBin'], axis=1)
+        Xtest = test_data.drop(['age', 'AgeBin'], axis=1)
         # Цільова змінна (вік)
-        ytrain = train_data['Age']
-        ytest = test_data['Age']
+        ytrain = train_data['age']
+        ytest = test_data['age']
 
         return Xtrain, Xtest, ytrain, ytest
 
@@ -218,10 +218,10 @@ class ClusterAnalysis:
         test_ages = pd.data()
 
         # Вхідні дані (біомаркери)
-        X = data.drop('Age', axis=1)
+        X = data.drop('age', axis=1)
 
         # Цільова змінна (вік)
-        y = data['Age']
+        y = data['age']
 
         # Розбиваємо вибірку на навчальний та тестовий набори
         # test_size=0.1 означає, що 10% даних піде у тестовий набір
@@ -292,7 +292,7 @@ class ClusterAnalysis:
 
         if rounded_intervals:
             # Приклад даних
-            data = self.data['Age']
+            data = self.data['age']
             data = pd.DataFrame(data)
 
             # Визначаємо інтервали та мітки
@@ -300,10 +300,10 @@ class ClusterAnalysis:
             labels = ['20-30', '30-40', '40-50', '50-60', '60-70', '70-80', '80-90']
 
             # Створюємо нову колонку з інтервалами
-            data['AgeBin'] = pd.cut(data['Age'], bins=bins, labels=labels)
+            data['AgeBin'] = pd.cut(data['age'], bins=bins, labels=labels)
 
             # Побудова гістограми
-            plt.hist(data['Age'], bins=bins, edgecolor='black')
+            plt.hist(data['age'], bins=bins, edgecolor='black')
             plt.xlabel('Age Groups')
             plt.ylabel('Frequency')
             plt.title('Age Distribution in 10-Year Intervals')
@@ -323,7 +323,7 @@ class ClusterAnalysis:
         else:
 
             # Припустимо, що у нас є колонка 'Age' з віковими даними
-            n, bins, patches = plt.hist(self.data['Age'], bins=10)
+            n, bins, patches = plt.hist(self.data['age'], bins=10)
             plt.title('Розподіл вікових груп')
             plt.xlabel('Вік')
             plt.ylabel('Кількість')
@@ -903,15 +903,15 @@ if __name__ == '__main__':
     path_to_biochemistry_dataset = r'../datasets/biochemistry_filled_empty_by_polynomial_method_3.xlsx'
     path_to_bones_dataset = r'../datasets/bones_filled_empty_by_polynomial_method_3.xlsx'
     path_to_gematology_dataset = r'../datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx'
-    path_to_NHANES_biochemistry = r'../datasets/biochemistryNHANES_filled_empty_by_polynomial_method_3.xlsx'
+    path_to_NHANES_biochemistry = r'../datasets/NHANES/NHANES3_HDTrain/Excel/Filled empty/biochemistry_filled_empty_by_polynomial_method_male.xlsx'
 
-    ClAnalysisGematologyMale = ClusterAnalysis(path_to_gematology_dataset, Sex.Male,
-                                     features.features_gematology_hight_correlation_with_age, Dataset.Gematology)
+    #ClAnalysisGematologyMale = ClusterAnalysis(path_to_gematology_dataset, Sex.Male,
+    #                                 features.features_gematology_hight_correlation_with_age, Dataset.Gematology)
 
 
     #ClAnalysisGematologyMale.ages_distribution()
     #ClAnalysisGematologyMale.scale()
-    pl.plot_pca(ClAnalysisGematologyMale.train_data_scaled)
+    #pl.plot_pca(ClAnalysisGematologyMale.train_data_scaled)
     #ClAnalysisMale.elbow()
     #ClAnalysisMale.kmeans_clustering_factory()
     #ClAnalysisMale.cmeans_factory()
@@ -932,11 +932,11 @@ if __name__ == '__main__':
     #print(ClAnalysis.train_data_selected_features_set_scaled)
     #ClAnalysisMale.minimal_spanning_tree_clustering()
 
-    #ClAnalysisNHANESBiochemistry = ClusterAnalysis(path_to_NHANES_biochemistry, Sex.Both, None, Dataset.NHANESBiochemistry)
+    ClAnalysisNHANESBiochemistry = ClusterAnalysis(path_to_NHANES_biochemistry, Sex.Male, None, Dataset.NHANESBiochemistry)
     #ClAnalysisFemale = ClusterAnalysis(r'datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx', 'Female')
     #ClAnalysisFemale.ages_distribution()
     #ClAnalysisFemale.scale()
-    #pl.plot_pca(ClAnalysisNHANESBiochemistry.train_data_scaled)
+    pl.plot_pca(ClAnalysisNHANESBiochemistry.train_data_scaled)
     #ClAnalysisFemale.elbow()
     #ClAnalysisNHANESBiochemistry.kmeans_clustering_factory()
     #ClAnalysisNHANESBiochemistry.cmeans_factory()
