@@ -33,4 +33,4 @@ class LabelStatus(Enum):
 class Sex(Enum):
     Male = 1
     Female = 2
-    Both = 3
+    Both_sexes = 3

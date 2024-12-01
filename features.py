@@ -1,5 +1,6 @@
 from enum import Enum
 
+# GERONTOLOGY DATASET BIOMARKERS
 
 gerontology_gematology_all=[
     'MCH',
@@ -55,6 +56,8 @@ gerontology_features_gematology_hight_correlation_with_age = ['RDW',
     'Hemoglobin',
     'Thrombocytes',
     'ESR']
+
+# NHANES DATASET FEATURES
 
 features_NHANES3_HDTrain_all = [
     'sampleID',
