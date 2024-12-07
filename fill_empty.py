@@ -37,7 +37,7 @@ def load_dataset(dataset_provider, dataset_version, dataset_type, attributes, se
     try:
         dataframe = pd.read_excel(path,
                                   sheet_name=sex,
-                                  names=dataset_attributes,
+                                  usecols=dataset_attributes,
                                   header=0)
         print('Data was imported!')
         return dataframe
@@ -67,22 +67,19 @@ def get_age_attribute_case(dataset_provider):
     else:
         raise ValueError(dataset_provider)
 """
-
-
-
-
+"""
 def select_biomarkers(dataframe, features_set):
-    """
-        Select biomarkers method for selecting from dataframe subset of biomarkers
-    """
+    
+    # Select biomarkers method for selecting from dataframe subset of biomarkers
+    
     #Age not age for gerontology
     selected_biomarkers = ['age']
     selected_biomarkers.extend(features_set)
     dataframe = dataframe.loc[:, selected_biomarkers]
     return dataframe
+"""
 
-
-def print_title(dataframe, sheet_name="", status="before"):
+def print_title(dataframe, sheet_name="", status=""):
     """
         Print title and information about dataframe
     """
@@ -98,7 +95,7 @@ def print_title(dataframe, sheet_name="", status="before"):
     print('ISNULL: ', dataframe.isnull().sum().sum()) # Number of null elements
 
 
-def select_ages(dataframe, sheet_name="", age_lower=20, age_upper=30):
+def select_ages(dataframe, sheet_name="", age_lower=None, age_upper=None):
 
     """
         Remove ages with empty values
@@ -172,9 +169,9 @@ def print_dataset(dataframe):
 
 def create_filled(provider, version, type, sex, age_lower, age_upper):
     features_all, features_selected = fd.determine_features_all_and_features_selected(version, type)
-    dataframe = load_dataset(provider.name, version.name, type.name.lower(), features_all, sex.name)
-    selected_biochemical_dataset = select_biomarkers(dataframe, features_selected)
-    selected_by_ages = select_ages(selected_biochemical_dataset, sex.name, age_lower, age_upper)
+    dataframe = load_dataset(provider.name, version.name, type.name.lower(), features_selected, sex.name)
+    #selected_biochemical_dataset = select_biomarkers(dataframe, features_selected)
+    selected_by_ages = select_ages(dataframe, sex.name, age_lower, age_upper)
 
     filled_empty = None
     filled_type = ""
@@ -193,8 +190,9 @@ def create_filled(provider, version, type, sex, age_lower, age_upper):
     if os.path.exists(file_path):
         print("Файл существует.")
 
+
         # Читаем файл, чтобы добавить новый лист
-        with pd.ExcelWriter(file_path, engine="openpyxl", mode="a") as writer:
+        with pd.ExcelWriter(file_path, engine="openpyxl", mode="a", if_sheet_exists='replace') as writer:
             filled_empty.to_excel(writer, sheet_name=sex.name, index=False)
 
 
@@ -267,5 +265,5 @@ def test_4():
     create_filled(provider, version, type, sex, age_lower, age_upper)
 
 
-test_4()
+test_1()
 

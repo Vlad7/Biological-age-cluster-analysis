@@ -21,7 +21,13 @@ import dataset_info as ie
 
 
 class ClusterAnalysis:
-    
+
+    def features_determinator(self, version, datasettype):
+        pass
+
+
+
+
     def __init__ (self, path, version, sex, hight_correlated_features=None, datasettype=ie.DatasetType.Biochemistry):
         """Constructor for cluster analysis
 
@@ -30,10 +36,9 @@ class ClusterAnalysis:
         :param is_hight_correlated_features:
         :param datasettype: type of dataset
         """
-        
-        #First attribute - Age
-        dataset_attributes = ['age']
 
+        # First attribute - Age
+        dataset_attributes = ['age']
 
         if version == ie.GERONTOLOGY.NEW and datasettype == ie.DatasetType.Biochemistry:
             # Add all attributes from biochemistry
@@ -58,8 +63,6 @@ class ClusterAnalysis:
             dataset_attributes.extend(ft.NHANES3_HDTrain_biochemistry_selected)
 
             print("All features: " + str(ft.NHANES3_HDTrain_biochemistry_selected))
-
-
 
         try:
             self.data = pd.read_excel(path,
@@ -880,12 +883,12 @@ if __name__ == '__main__':
     plt.show()
     """
 
-
+    """
     provider = ie.Provider.GERONTOLOGY
     version = ie.GERONTOLOGY.NEW
     type = ie.DatasetType.Biochemistry
     sex = ie.Sex.Both_sexes
-
+    """
 
     """
     provider = ie.Provider.GERONTOLOGY
@@ -894,12 +897,12 @@ if __name__ == '__main__':
     sex = ie.Sex.Male
     """
 
-    """
+
     provider = ie.Provider.GERONTOLOGY
     version = ie.GERONTOLOGY.NEW  
     type = ie.DatasetType.Gemogramma
     sex = ie.Sex.Male
-    """
+
 
     """
     provider = ie.Provider.NHANES

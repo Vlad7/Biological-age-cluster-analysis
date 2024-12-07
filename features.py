@@ -34,10 +34,7 @@ gerontology_bones_all=['BMI',
                     'Radius',
                     'TBS'
 ]
-
-gerontology_biochemistry_all=['Alkaline phosphatase',
-                           'AlT',
-                           'AsT',
+gerontology_biochemistry_both_versions=['AlT',
                            'Cholesterol',
                            'Cholesterol-HDL',
                            'Cholesterol-LDL',
@@ -45,13 +42,17 @@ gerontology_biochemistry_all=['Alkaline phosphatase',
                            'Creatinine',
                            'Glucose in plasma after 2 hours SGTT',
                            'Glucose in plasma basal',
-                           'HOMA index',
-                           'Insuline basal',
                            'Triglycerides',
                            'Urea'
 ]
 
+gerontology_biochemistry_old_additionally=['Atherogenic index']
 
+gerontology_biochemistry_new_additionally=['Alkaline phosphatase',
+                           'AsT',
+                           'HOMA index',
+                           'Insuline basal',
+]
 
 # Pisaruk, that correlates most with age near 0.15
 
