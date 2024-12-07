@@ -16,27 +16,13 @@ import sys
 from enum import Enum
 
 import pca_lib as pl
-
-
-
-class Dataset(Enum):
-    """Type of dataset"""
-    Biochemistry = 1
-    Bones = 2
-    Gematology = 3
-    NHANESBiochemistry = 4
-
-class Sex (Enum):
-    """Sex of persons in dataset"""
-    Both = 1
-    Female = 2
-    Male = 3
-
+import features_determinator as fd
+import dataset_info as ie
 
 
 class ClusterAnalysis:
     
-    def __init__ (self, path, sex, hight_correlated_features=None, datasettype=Dataset.Biochemistry):
+    def __init__ (self, path, version, sex, hight_correlated_features=None, datasettype=ie.DatasetType.Biochemistry):
         """Constructor for cluster analysis
 
         :param path: path to file with database
@@ -47,43 +33,37 @@ class ClusterAnalysis:
         
         #First attribute - Age
         dataset_attributes = ['age']
-        
-        if datasettype == Dataset.Biochemistry:
-            # Add all attributes from biochemistry
-            dataset_attributes.extend((ft.features_biochemistry_all))
-            
-            print("All features: " + str(ft.features_biochemistry_all))
-            
-        elif datasettype == Dataset.Bones:
-            # Add all attributes from bones
-            dataset_attributes.extend((ft.features_bones_all))
-                                      
-            print("All features: " + str(ft.features_bones_all))
-            
-        elif datasettype == Dataset.Gematology:
-            # Add all attributes from gematology            
-            dataset_attributes.extend(ft.features_gematology_all)
-            
-            print("All features: " + str(ft.features_gematology_all))
 
-        elif datasettype == Dataset.NHANESBiochemistry:
+
+        if version == ie.GERONTOLOGY.NEW and datasettype == ie.DatasetType.Biochemistry:
+            # Add all attributes from biochemistry
+            dataset_attributes.extend((ft.gerontology_biochemistry_all))
+
+            print("All features: " + str(ft.gerontology_biochemistry_all))
+
+        elif version == ie.GERONTOLOGY.NEW and datasettype == ie.DatasetType.Bones:
+            # Add all attributes from bones
+            dataset_attributes.extend((ft.gerontology_bones_all))
+
+            print("All features: " + str(ft.gerontology_bones_all))
+
+        elif version == ie.GERONTOLOGY.NEW and datasettype == ie.DatasetType.Gemogramma:
+            # Add all attributes from gematology
+            dataset_attributes.extend(ft.gerontology_gematology_all)
+
+            print("All features: " + str(ft.gerontology_gematology_all))
+
+        elif version == ie.NHANES.NHANES3_HDTrain and datasettype == ie.DatasetType.Biochemistry:
             # Add all attributes from NHANES biochemistry
             dataset_attributes.extend(ft.NHANES3_HDTrain_biochemistry_selected)
 
             print("All features: " + str(ft.NHANES3_HDTrain_biochemistry_selected))
 
-        sexs = ""
 
-        if sex == Sex.Both:
-            sexs = "Both sexes"
-        elif sex == Sex.Female:
-            sexs = "Female"
-        elif sex == Sex.Male:
-            sexs = "Male"
 
         try:
             self.data = pd.read_excel(path,
-                            sheet_name=sexs,
+                            sheet_name=sex.name,
                             names=dataset_attributes)
 
             print('Data was imported!')
@@ -900,21 +880,48 @@ if __name__ == '__main__':
     plt.show()
     """
 
-    path_to_biochemistry_dataset = r'../datasets/biochemistry_filled_empty_by_polynomial_method_3.xlsx'
-    path_to_bones_dataset = r'../datasets/bones_filled_empty_by_polynomial_method_3.xlsx'
-    path_to_gematology_dataset = r'../datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx'
-    path_to_NHANES_biochemistry = r'../datasets/NHANES/NHANES3_HDTrain/Excel/Filled empty/biochemistry_filled_empty_by_polynomial_method_male.xlsx'
 
-    #ClAnalysisGematologyMale = ClusterAnalysis(path_to_gematology_dataset, Sex.Male,
-    #                                 features.features_gematology_hight_correlation_with_age, Dataset.Gematology)
+    provider = ie.Provider.GERONTOLOGY
+    version = ie.GERONTOLOGY.NEW
+    type = ie.DatasetType.Biochemistry
+    sex = ie.Sex.Both_sexes
+
+
+    """
+    provider = ie.Provider.GERONTOLOGY
+    version = ie.GERONTOLOGY.NEW  
+    type = ie.DatasetType.Bones
+    sex = ie.Sex.Male
+    """
+
+    """
+    provider = ie.Provider.GERONTOLOGY
+    version = ie.GERONTOLOGY.NEW  
+    type = ie.DatasetType.Gemogramma
+    sex = ie.Sex.Male
+    """
+
+    """
+    provider = ie.Provider.NHANES
+    version = ie.NHANES.NHANES3_HDTrain 
+    type = ie.DatasetType.Biochemistry
+    sex = ie.Sex.Male
+    """
+
+    path_to_dataset = fr'../datasets/{provider.name}/{version.name}/Excel/Filled empty/{type.name.lower()}_filled_empty_by_polynomial_method.xlsx'
+
+
+
+    #ClAnalysisGematologyMale = ClusterAnalysis(path_to_dataset, version, sex,
+    #                                 ft.gerontology_gematology_hight_correlation_with_age, type)
 
 
     #ClAnalysisGematologyMale.ages_distribution()
     #ClAnalysisGematologyMale.scale()
     #pl.plot_pca(ClAnalysisGematologyMale.train_data_scaled)
     #ClAnalysisMale.elbow()
-    #ClAnalysisMale.kmeans_clustering_factory()
-    #ClAnalysisMale.cmeans_factory()
+    #ClAnalysisGematologyMale.kmeans_clustering_factory()
+    #ClAnalysisGematologyMale.cmeans_factory()
 
 
     #ClAnalysisBonesFemale = ClusterAnalysis(path_to_bones_dataset, Sex.Female,
@@ -925,18 +932,19 @@ if __name__ == '__main__':
     #ClAnalysisMale.kmeans_clustering_factory()
     #ClAnalysisMale.cmeans_factory()
 
-    #ClAnalysisBiochemistryBoth = ClusterAnalysis(path_to_biochemistry_dataset, Sex.Both,
-    #                                             None, Dataset.Biochemistry)
+    ClAnalysisBiochemistryBoth = ClusterAnalysis(path_to_dataset, version, sex,None, type)
     #ClAnalysisBiochemistryBoth.scale()
-    #pl.plot_pca(ClAnalysisBiochemistryBoth.train_data_scaled)
+    pl.plot_pca(ClAnalysisBiochemistryBoth.train_data_scaled)
     #print(ClAnalysis.train_data_selected_features_set_scaled)
     #ClAnalysisMale.minimal_spanning_tree_clustering()
+    ClAnalysisBiochemistryBoth.kmeans_clustering_factory()
+    ClAnalysisBiochemistryBoth.cmeans_factory()
 
-    ClAnalysisNHANESBiochemistry = ClusterAnalysis(path_to_NHANES_biochemistry, Sex.Male, None, Dataset.NHANESBiochemistry)
+    #ClAnalysisNHANESBiochemistry = ClusterAnalysis(path_to_NHANES_biochemistry, ie.NHANES.NHANES3_HDTrain, ie.Sex.Male, None, ie.DatasetType.Biochemistry)
     #ClAnalysisFemale = ClusterAnalysis(r'datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx', 'Female')
     #ClAnalysisFemale.ages_distribution()
     #ClAnalysisFemale.scale()
-    pl.plot_pca(ClAnalysisNHANESBiochemistry.train_data_scaled)
+    #pl.plot_pca(ClAnalysisNHANESBiochemistry.train_data_scaled)
     #ClAnalysisFemale.elbow()
     #ClAnalysisNHANESBiochemistry.kmeans_clustering_factory()
     #ClAnalysisNHANESBiochemistry.cmeans_factory()

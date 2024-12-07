@@ -5,13 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="24bd9aea-754d-405c-9ac3-89d5f23f4a7c" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/.name" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.name" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ClusterAnalysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/ClusterAnalysis.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/features.py" beforeDir="false" afterPath="$PROJECT_DIR$/features.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/fill_empty_polinomial (female).py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/fill_empty_polinomial.py" beforeDir="false" afterPath="$PROJECT_DIR$/fill_empty_polinomial.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/fill_empty_polinomial_2.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/fill_empty_polinomial_biochemistry.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/info_enums.py" beforeDir="false" afterPath="$PROJECT_DIR$/info_enums.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/features_determinator.py" beforeDir="false" afterPath="$PROJECT_DIR$/features_determinator.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fill_empty_polinomial.py" beforeDir="false" afterPath="$PROJECT_DIR$/fill_empty.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/info_enums.py" beforeDir="false" afterPath="$PROJECT_DIR$/dataset_info.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/~$ести корективи на майбутнє.docx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Пояснення.docx" beforeDir="false" afterPath="$PROJECT_DIR$/Пояснення.docx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -37,20 +40,21 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python.ClusterAnalysis.executor": "Run",
-    "Python.features_determinator.executor": "Run",
-    "Python.fill_empty_polinomial (1).executor": "Run",
-    "Python.fill_empty_polinomial_2 (1).executor": "Run",
-    "Python.fill_empty_polinomial_NHANES.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "main",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.ClusterAnalysis.executor&quot;: &quot;Run&quot;,
+    &quot;Python.features_determinator.executor&quot;: &quot;Run&quot;,
+    &quot;Python.fill_empty (1).executor&quot;: &quot;Run&quot;,
+    &quot;Python.fill_empty_polinomial (1).executor&quot;: &quot;Run&quot;,
+    &quot;Python.fill_empty_polinomial_2 (1).executor&quot;: &quot;Run&quot;,
+    &quot;Python.fill_empty_polinomial_NHANES.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
-}]]></component>
-  <component name="RunManager" selected="Python.fill_empty_polinomial (1)">
+}</component>
+  <component name="RunManager" selected="Python.fill_empty (1)">
     <configuration name="ClusterAnalysis" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="GClustering" />
       <option name="ENV_FILES" value="" />
@@ -95,7 +99,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="fill_empty_polinomial (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="fill_empty (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="GClustering" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -108,7 +112,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/fill_empty_polinomial.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/fill_empty.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -117,7 +121,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="fill_empty_polinomial" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="fill_empty" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="GClustering" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -130,7 +134,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="G:\Мій диск\Аспірантура\Наукова робота\МАТЕРІАЛИ ДЛЯ ДИСЕРТАЦІЇ\Cluster analysis\GClustering\fill_empty_polinomial.py" />
+      <option name="SCRIPT_NAME" value="G:\Мій диск\Аспірантура\Наукова робота\МАТЕРІАЛИ ДЛЯ ДИСЕРТАЦІЇ\Cluster analysis\GClustering\fill_empty.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -185,10 +189,9 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.fill_empty_polinomial (1)" />
-        <item itemvalue="Python.fill_empty_polinomial_2 (1)" />
-        <item itemvalue="Python.features_determinator" />
+        <item itemvalue="Python.fill_empty (1)" />
         <item itemvalue="Python.ClusterAnalysis" />
+        <item itemvalue="Python.features_determinator" />
         <item itemvalue="Python.fill_empty_polinomial_2" />
       </list>
     </recent_temporary>

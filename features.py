@@ -2,23 +2,26 @@ from enum import Enum
 
 # GERONTOLOGY DATASET BIOMARKERS
 
+# Gematology features
+
 gerontology_gematology_all=[
+    'ESR',
     'MCH',
     'MCHC',
     'MCV',
     'MPV',
     'PDW',
     'RDW',
+    'Granulocytes',
     'Hematocrit',
     'Hemoglobin',
-    'Granulocytes',
-    'Red blood cells',
     'Leukocytes',
     'Lymphocytes',
     'Monocyte',
+    'Red blood cells',
     'Thrombocrit',
     'Thrombocytes',
-    'ESR']
+    ]
 
 gerontology_bones_all=['BMI',
                     'FRAX-all',
@@ -40,8 +43,8 @@ gerontology_biochemistry_all=['Alkaline phosphatase',
                            'Cholesterol-LDL',
                            'Cholesterol-VLDL',
                            'Creatinine',
-                           'Glucose in plasma basal',
                            'Glucose in plasma after 2 hours SGTT',
+                           'Glucose in plasma basal',
                            'HOMA index',
                            'Insuline basal',
                            'Triglycerides',
@@ -49,9 +52,10 @@ gerontology_biochemistry_all=['Alkaline phosphatase',
 ]
 
 
+
 # Pisaruk, that correlates most with age near 0.15
 
-gerontology_features_gematology_hight_correlation_with_age = ['RDW',
+gerontology_gematology_hight_correlation_with_age = ['RDW',
     'Hematocrit',
     'Hemoglobin',
     'Thrombocytes',
