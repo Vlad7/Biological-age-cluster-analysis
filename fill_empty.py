@@ -264,6 +264,17 @@ def test_4():
 
     create_filled(provider, version, type, sex, age_lower, age_upper)
 
+def test_4():
 
+    provider = di.Provider.GERONTOLOGY
+    version = di.GERONTOLOGY.NEW
+    type = di.DatasetType.Biochemistry
+    sex = di.Sex.Both_sexes
+    age_lower = 20
+    age_upper = 79
+
+    create_filled(provider, version, type, sex, age_lower, age_upper)
+
+    
 test_1()
 

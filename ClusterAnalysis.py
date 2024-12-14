@@ -19,6 +19,10 @@ import pca_lib as pl
 import features_determinator as fd
 import dataset_info as ie
 
+from sklearn import datasets
+
+
+
 
 class ClusterAnalysis:
 
@@ -28,7 +32,7 @@ class ClusterAnalysis:
 
 
 
-    def __init__ (self, path, version, sex, hight_correlated_features=None, datasettype=ie.DatasetType.Biochemistry):
+    def __init__ (self, dataframe):
         """Constructor for cluster analysis
 
         :param path: path to file with database
@@ -37,59 +41,11 @@ class ClusterAnalysis:
         :param datasettype: type of dataset
         """
 
-        # First attribute - Age
-        dataset_attributes = ['age']
 
-        if version == ie.GERONTOLOGY.NEW and datasettype == ie.DatasetType.Biochemistry:
-            # Add all attributes from biochemistry
-            dataset_attributes.extend((ft.gerontology_biochemistry_all))
-
-            print("All features: " + str(ft.gerontology_biochemistry_all))
-
-        elif version == ie.GERONTOLOGY.NEW and datasettype == ie.DatasetType.Bones:
-            # Add all attributes from bones
-            dataset_attributes.extend((ft.gerontology_bones_all))
-
-            print("All features: " + str(ft.gerontology_bones_all))
-
-        elif version == ie.GERONTOLOGY.NEW and datasettype == ie.DatasetType.Gemogramma:
-            # Add all attributes from gematology
-            dataset_attributes.extend(ft.gerontology_gematology_all)
-
-            print("All features: " + str(ft.gerontology_gematology_all))
-
-        elif version == ie.NHANES.NHANES3_HDTrain and datasettype == ie.DatasetType.Biochemistry:
-            # Add all attributes from NHANES biochemistry
-            dataset_attributes.extend(ft.NHANES3_HDTrain_biochemistry_selected)
-
-            print("All features: " + str(ft.NHANES3_HDTrain_biochemistry_selected))
-
-        try:
-            self.data = pd.read_excel(path,
-                            sheet_name=sex.name,
-                            names=dataset_attributes)
-
-            print('Data was imported!')
-
-        except FileNotFoundError:
-            print('File was not found!')
-            sys.exit(0)
-
-        #Selected biomarkers
-        selected_biomarkers = None
-
-        if hight_correlated_features != None:
-            # Select feature labels that hight correlates with age
-            selected_biomarkers = ['age']
-            selected_biomarkers.extend(hight_correlated_features)
-        else:
-            selected_biomarkers = dataset_attributes
-
-        selected_data = self.data.loc[:, selected_biomarkers]
 
         #Split dataset on train and test datasets with ages accordingly
         self.train_data, self.test_data, self.train_ages, self.test_ages = (
-            self.split_on_train_and_test_datasets(selected_data, age_bins=True))
+            self.split_on_train_and_test_datasets(dataframe, age_bins=True))
 
         # Print train data with selected features
         print("Training data:")
@@ -147,7 +103,7 @@ class ClusterAnalysis:
         :param data: input data
         :return: train_data, test_data - dataframes
         """
-        # Порожні data'и для тренувальної та тестової вибірок
+        # Порожні dataфрейми для тренувальної та тестової вибірок (як для даних), так і для віків.
         train_data = pd.DataFrame()
         test_data = pd.DataFrame()
 
@@ -161,32 +117,61 @@ class ClusterAnalysis:
         labels = ['20-30', '30-40', '40-50', '50-60', '60-70', '70-80', '80-90']
         data['AgeBin'] = pd.cut(data['age'], bins=bins, labels=labels)
 
+        # Move AgeBin column after age column
         data = self.move_age_bin_column_to_after_age_position(data)
 
         # Пропорциональное разбиение для каждого бина
         for bin_label in labels:
-            bin_data = data[data['AgeBin'] == bin_label]
 
-            # Пропорциональный размер тестового набора зависит от количества данных в бине
-            if len(bin_data) > 1:  # Проверяем, что есть больше одного элемента для разделения
+            # data['AgeBin'] == bin_label - це логічний вираз, який перевіряє, чи
+            # рівні значення в стовпці ‘AgeBin’ значенню змінної bin_label.  В
+            # результаті вийде Series (стовпець) із булевих значень (True або False).
 
-                # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!errors?
-                test_size = min(0.3,
-                                1 / len(bin_data))  # Чем меньше данных, тем меньший тестовый набор до определенного
+            bin_data = data[data['AgeBin'] == bin_label] # data[data['AgeBin'] == bin_label]
+                                                         # - використовується для фільтрації строк в DataFrame data.
+                                                         # Строки, #для яких значення в стовпці ‘AgeBin’ співпадає з
+                                                         # bin_label, будуть #обрані.
+
+            # Пропорційний розмір тестового набору залежить від кількості даних у біні
+            if len(bin_data) > 1:  # Перевіряємо, що є більше одного елементу для розділу в біні
+
+                # Необхідно перевірити, чи є помилки в даній моделі test_size !!!
+                #test_size = min(0.3, 1 / len(bin_data))  # Чем меньше данных, тем меньший тестовый набор до определенного
                 # предела 3 обьекта в бине, потом, при большем количестве данных будет меньше тестовый набор
+
+
+
+
+
+                # Розмір тестової вибірки 10%
+                test_size = 0.1
+
+                # Виведення на екран розміру тестової вибірки
                 print("Test size in age bin " + str(test_size))
 
-                # Maybe make with y! stratify maybe
+                # Розбиття вибірки на тренувальні та тестові біни
+                # Можливо зробити з y. Можливо зробити стратифікацію
                 train_bin, test_bin = train_test_split(bin_data, test_size=test_size, random_state=42)
 
+                # Датафрейм train_data отримується шляхом злиття тренувальних
+                # даних з декількох бінів попередніх ітерацій з тренувальними
+                # даними для поточного біну по вертикалі (додаються рядки)
                 train_data = pd.concat([train_data, train_bin], axis=0)
+
+                # Датафрейм test_data отримується шляхом злиття тестових
+                # даних з декількох бінів попередніх ітерацій з тестовими
+                # даними для поточного біну по вертикалі (додаються рядки)
                 test_data = pd.concat([test_data, test_bin], axis=0)
 
-        # Вхідні дані (біомаркери)
+        # Xtrain - тренувальна вибірка, вхідні дані (біомаркери) без віку та вікового біну
         Xtrain = train_data.drop(['age', 'AgeBin'], axis=1)
+        # Xtest - тестова вибірка без віку та вікового біну
         Xtest = test_data.drop(['age', 'AgeBin'], axis=1)
-        # Цільова змінна (вік)
+
+        # ytrain - тренувальна вибірка, цільова змінна - вік
         ytrain = train_data['age']
+
+        # ytest - тестова вибірка, цільова змінна - вік
         ytest = test_data['age']
 
         return Xtrain, Xtest, ytrain, ytest
@@ -225,7 +210,11 @@ class ClusterAnalysis:
         return train_data, test_data, train_ages, test_ages
 
     def split_on_train_and_test_datasets(self, data, age_bins=True):
-
+        """  Split dataset on train and test datasets
+             input:
+                data - dataset
+                age_bins - if there is age bins
+        """
         # Пустые data'ы для тренировочной и тестовой выборки
         train_data = pd.DataFrame()
         test_data = pd.DataFrame()
@@ -237,7 +226,6 @@ class ClusterAnalysis:
            train_data, test_data, train_ages, test_ages = self.split_on_train_and_test_datasets_based_on_age_bins(data)
 
         else:
-
             train_data, test_data, train_ages, test_ages = self.split_on_train_and_test_datasets_without_bins(data)
 
         # Сбрасываем индексыб, не нужно!!!
@@ -411,21 +399,28 @@ class ClusterAnalysis:
 
         """Доробити алгоритм k-means"""
 
+        # Змінній data присвоюється значення масштабованого датафрейму з тренувальної вибірки
         data = self.train_data_scaled
 
-        clasters_number = 0
+        # Ініціюємо змінну clusters_number нулем
+        clusters_number = 0
 
-        while clasters_number == 0:
+        # Цикл виконується доти, доки змінна clusters_number дорівнює нулю
+        while clusters_number == 0:
+            # Спробуємо виконати ділянку коду нижче
             try:
-                clasters_number = int(input("Enter clusters number: "))
-                print("Clasters number: ", clasters_number)
+                clusters_number = int(input("Enter clusters number: "))
+                print("Clasters number: ", clusters_number)
 
+            # Якщо ми ввели строку, то вона не перетвориться в число в функції приведення типів int()
+            # і виникне виняткова ситуація ValueError
             except ValueError:
                 print("Введите лучше число!")
 
 
-
-        centers, labels = self.kmeans_clustering(data, clasters_number)
+        # Викликається метод kmeans_clustering, який повертає центри отриманих кластерів та вектор належності
+        # людей кластерам
+        centers, labels = self.kmeans_clustering(data, clusters_number)
 
         """
         classes_number = len(set(labels))
@@ -438,8 +433,8 @@ class ClusterAnalysis:
         """
 
 
-        indexes = self.clusters_patient_indexes(labels)
-        clusters_bio_age = self.clusters_bio_age(self.train_ages, indexes)
+        indexes = self.indexes_of_persons_of_each_cluster(labels)
+        clusters_bio_age = self.biological_age_of_each_cluster(self.train_ages, indexes)
 
         print(indexes)
         print(clusters_bio_age)
@@ -466,55 +461,69 @@ class ClusterAnalysis:
         visualizer.show()        # Finalize and render the figure
 
 
-    ####################################################################################################################
-    ########################################## K-means biological age detection ########################################
-    ####################################################################################################################
+    #####################################################################################################
+    ############################## K-means biological age detection #####################################
+    #####################################################################################################
 
-    def clusters_patient_indexes (self, labels):
+    def indexes_of_persons_of_each_cluster (self, labels):
 
-        """ Find list of human indexes for each cluster
+        """ Find list of persons indexes for each cluster
 
             input:
-                - labels - list with class labels for each human as index
+                - labels - list with class labels for each person as index
+                            and element as class label
+                    example: [ 1 0 2 0 1 0 2]
 
             output:
 
-                - dictionary with indexes of human in each class
+                - dictionary with indexes of persons in each claster from
+                    example {1: [0, 2, 3], 2: [1, 4, 5, 6], 3: [7, 8, 9, 10]}
         """
-
         unique_classes = np.unique(labels)
 
-        clusters_patient_indexes = {key: [] for key in dict.fromkeys(unique_classes)}
+        # The fromkeys() method returns a dictionary with the specified
+        # keys and the specified value ([] for each key in this case).
 
-        for index, claster_number in enumerate(labels):
+        indexes_of_persons_in_each_cluster = dict.fromkeys(unique_classes, [])
 
-            clusters_patient_indexes[claster_number].append(index)
+        for index, cluster_number in enumerate(labels):
 
-        return clusters_patient_indexes
+            indexes_of_persons_in_each_cluster[cluster_number].append(index)
+
+        return indexes_of_persons_in_each_cluster
 
 
-    def clusters_bio_age(self, train_ages_dataframe, indexes_of_persons_in_clusters):
+    def biological_age_of_each_cluster(self, ages_train_dataframe, indexes_of_persons_in_each_cluster):
         
-        """ Mean ariphmetic by each cluster bio age """
+        """ Mean ariphmetic biological age for each cluster
+
+            input:
+                ages_train_dataframe - dataframe only with ages from train set
+                indexes_of_persons_in_each_cluster - dictionary with indexes of
+                                                        persons in each claster
+
+            output:
+                dictionary with biological age of each cluster
+                """
         
-        clusters_bio_age = {}
+        biological_age_of_each_cluster_dictionary = {}
         
-        for cluster_number in indexes_of_persons_in_clusters.keys():
+        for cluster_number in indexes_of_persons_in_each_cluster.keys():
 
             summ = 0
 
-            persons_indexes = indexes_of_persons_in_clusters[cluster_number]
+            persons_indexes = indexes_of_persons_in_each_cluster[cluster_number]
 
             for person_index in persons_indexes:
-                 #3                summ +=t rain_ages_dataframe['Age'].values[person_index]
-                summ +=train_ages_dataframe.values[person_index]
+                # summ += ages_train_dataframe['Age'].values[person_index]
+                summ +=ages_train_dataframe.values[person_index]
 
             summ = summ / len(persons_indexes)
 
-            clusters_bio_age[cluster_number] = summ
+            biological_age_of_each_cluster_dictionary[cluster_number] = summ
 
 
-        return clusters_bio_age
+        return biological_age_of_each_cluster_dictionary
        
             
       
@@ -855,7 +864,60 @@ class ClusterAnalysis:
         plt.scatter(X[:, 0], X[:, 1], c=labels, cmap='rainbow')
         plt.show()
 
-    
+
+def load_bio_age_dataset(path, version, sex, hight_correlated_features=None, datasettype=ie.DatasetType.Biochemistry):
+    # First attribute - Age
+    dataset_attributes = ['age']
+
+    if version == ie.GERONTOLOGY.NEW and datasettype == ie.DatasetType.Biochemistry:
+        # Add all attributes from biochemistry
+        dataset_attributes.extend((ft.gerontology_biochemistry_all))
+
+        print("All features: " + str(ft.gerontology_biochemistry_all))
+
+    elif version == ie.GERONTOLOGY.NEW and datasettype == ie.DatasetType.Bones:
+        # Add all attributes from bones
+        dataset_attributes.extend((ft.gerontology_bones_all))
+
+        print("All features: " + str(ft.gerontology_bones_all))
+
+    elif version == ie.GERONTOLOGY.NEW and datasettype == ie.DatasetType.Gemogramma:
+        # Add all attributes from gematology
+        dataset_attributes.extend(ft.gerontology_gematology_all)
+
+        print("All features: " + str(ft.gerontology_gematology_all))
+
+    elif version == ie.NHANES.NHANES3_HDTrain and datasettype == ie.DatasetType.Biochemistry:
+        # Add all attributes from NHANES biochemistry
+        dataset_attributes.extend(ft.NHANES3_HDTrain_biochemistry_selected)
+
+        print("All features: " + str(ft.NHANES3_HDTrain_biochemistry_selected))
+
+    data = None
+
+    try:
+        data = pd.read_excel(path,
+                                  sheet_name=sex.name,
+                                  names=dataset_attributes)
+
+        print('Data was imported!')
+
+    except FileNotFoundError:
+        print('File was not found!')
+        sys.exit(1)
+
+    # Selected biomarkers
+    selected_biomarkers = None
+
+    if hight_correlated_features != None:
+        # Select feature labels that hight correlates with age
+        selected_biomarkers = ['age']
+        selected_biomarkers.extend(hight_correlated_features)
+    else:
+        selected_biomarkers = dataset_attributes
+
+    selected_data = data.loc[:, selected_biomarkers]
+
 if __name__ == '__main__':
     """
     import matplotlib.pyplot as plt
@@ -911,8 +973,17 @@ if __name__ == '__main__':
     sex = ie.Sex.Male
     """
 
-    path_to_dataset = fr'../datasets/{provider.name}/{version.name}/Excel/Filled empty/{type.name.lower()}_filled_empty_by_polynomial_method.xlsx'
+    #path_to_dataset = fr'../datasets/{provider.name}/{version.name}/Excel/Filled empty/{type.name.lower()}_filled_empty_by_polynomial_method.xlsx'
 
+    iris = datasets.load_iris()
+
+    print(iris)
+    df = pd.DataFrame(data=iris.data, columns=iris.feature_names)
+    print(df)
+
+    #print(df.head())
+
+    pl.plot_pca(df)
 
 
     #ClAnalysisGematologyMale = ClusterAnalysis(path_to_dataset, version, sex,
@@ -935,13 +1006,13 @@ if __name__ == '__main__':
     #ClAnalysisMale.kmeans_clustering_factory()
     #ClAnalysisMale.cmeans_factory()
 
-    ClAnalysisBiochemistryBoth = ClusterAnalysis(path_to_dataset, version, sex,None, type)
+    #ClAnalysisBiochemistryBoth = ClusterAnalysis(path_to_dataset, version, sex,None, type)
     #ClAnalysisBiochemistryBoth.scale()
-    pl.plot_pca(ClAnalysisBiochemistryBoth.train_data_scaled)
+    #pl.plot_pca(ClAnalysisBiochemistryBoth.train_data_scaled)
     #print(ClAnalysis.train_data_selected_features_set_scaled)
     #ClAnalysisMale.minimal_spanning_tree_clustering()
-    ClAnalysisBiochemistryBoth.kmeans_clustering_factory()
-    ClAnalysisBiochemistryBoth.cmeans_factory()
+    #ClAnalysisBiochemistryBoth.kmeans_clustering_factory()
+    #ClAnalysisBiochemistryBoth.cmeans_factory()
 
     #ClAnalysisNHANESBiochemistry = ClusterAnalysis(path_to_NHANES_biochemistry, ie.NHANES.NHANES3_HDTrain, ie.Sex.Male, None, ie.DatasetType.Biochemistry)
     #ClAnalysisFemale = ClusterAnalysis(r'datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx', 'Female')

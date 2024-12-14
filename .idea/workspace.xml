@@ -4,12 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="24bd9aea-754d-405c-9ac3-89d5f23f4a7c" name="Changes" comment="Before dele">
-      <change beforePath="$PROJECT_DIR$/.idea/.name" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.name" afterDir="false" />
+    <list default="true" id="24bd9aea-754d-405c-9ac3-89d5f23f4a7c" name="Changes" comment="During refactoring PCA">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ClusterAnalysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/ClusterAnalysis.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/features.py" beforeDir="false" afterPath="$PROJECT_DIR$/features.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/fill_empty.py" beforeDir="false" afterPath="$PROJECT_DIR$/fill_empty.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Внести корективи на майбутнє.docx" beforeDir="false" afterPath="$PROJECT_DIR$/Внести корективи на майбутнє.docx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Пояснення.docx" beforeDir="false" afterPath="$PROJECT_DIR$/Пояснення.docx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -57,7 +57,7 @@
     &quot;Python.fill_empty_polinomial_NHANES.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;old__school&quot;,
     &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
 }</component>
@@ -233,5 +233,21 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Before editing names to usecolumns in load dataset function" />
     <option name="LAST_COMMIT_MESSAGE" value="Before editing names to usecolumns in load dataset function" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/ClusterAnalysis.py</url>
+          <line>106</line>
+          <option name="timeStamp" value="2" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/ClusterAnalysis.py</url>
+          <line>138</line>
+          <option name="timeStamp" value="3" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>
