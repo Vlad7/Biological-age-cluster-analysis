@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.cluster.vq import kmeans
 from sklearn.preprocessing import StandardScaler    #Standardize features by removing the mean and scaling to unit variance.
 
 #import webcolors as wc
@@ -21,29 +22,11 @@ import dataset_info as ie
 
 from sklearn import datasets
 
-
-
-
-class ClusterAnalysis:
-
-    def features_determinator(self, version, datasettype):
-        pass
-
-
-
+class BiologicalAge:
 
     def __init__ (self, dataframe):
-        """Constructor for cluster analysis
 
-        :param path: path to file with database
-        :param sex:  sex of persons in database
-        :param is_hight_correlated_features:
-        :param datasettype: type of dataset
-        """
-
-
-
-        #Split dataset on train and test datasets with ages accordingly
+        # Split dataset on train and test datasets with ages accordingly
         self.train_data, self.test_data, self.train_ages, self.test_ages = (
             self.split_on_train_and_test_datasets(dataframe, age_bins=True))
 
@@ -55,30 +38,6 @@ class ClusterAnalysis:
         print("Training ages:")
         print(self.train_ages)
 
-
-        # Biomarkers sfs = selected feature set
-        self.train_data_scaled = self.scale(self.train_data.values)
-        self.test_data_scaled = self.scale(self.test_data.values)
-
-        # train_ages_scaled = std_scaler.fit_transform(self.train_ages.values)
-        # test_ages_scaled = std_scaler.fit_transform(self.test_ages.values)
-        #self.train_data_sfs_scaled, self.test_data_sfs_scaled, self.train_ages_scaled, self.test_ages_scaled = (
-        #    self.scale(self.train_data, self.test_data, self.train_ages, self.test_ages))
-
-
-    def scale (self, dataframe):
-        """Scaling method
-
-        :param dataframe: dataframe to scale
-        :return: scaled_data
-        """
-        # Scaling
-
-        std_scaler = StandardScaler()
-        data_scaled = std_scaler.fit_transform(dataframe)
-
-        return data_scaled
-        
     def move_age_bin_column_to_after_age_position(self, data):
         """Move age bin column from the end to position after age
 
@@ -110,8 +69,6 @@ class ClusterAnalysis:
         train_ages = pd.DataFrame()
         test_ages = pd.DataFrame()
 
-
-
         # Розбиваємо на вікові біни
         bins = [20, 30, 40, 50, 60, 70, 80, 90]
         labels = ['20-30', '30-40', '40-50', '50-60', '60-70', '70-80', '80-90']
@@ -127,21 +84,17 @@ class ClusterAnalysis:
             # рівні значення в стовпці ‘AgeBin’ значенню змінної bin_label.  В
             # результаті вийде Series (стовпець) із булевих значень (True або False).
 
-            bin_data = data[data['AgeBin'] == bin_label] # data[data['AgeBin'] == bin_label]
-                                                         # - використовується для фільтрації строк в DataFrame data.
-                                                         # Строки, #для яких значення в стовпці ‘AgeBin’ співпадає з
-                                                         # bin_label, будуть #обрані.
+            bin_data = data[data['AgeBin'] == bin_label]  # data[data['AgeBin'] == bin_label]
+            # - використовується для фільтрації строк в DataFrame data.
+            # Строки, #для яких значення в стовпці ‘AgeBin’ співпадає з
+            # bin_label, будуть #обрані.
 
             # Пропорційний розмір тестового набору залежить від кількості даних у біні
             if len(bin_data) > 1:  # Перевіряємо, що є більше одного елементу для розділу в біні
 
                 # Необхідно перевірити, чи є помилки в даній моделі test_size !!!
-                #test_size = min(0.3, 1 / len(bin_data))  # Чем меньше данных, тем меньший тестовый набор до определенного
+                # test_size = min(0.3, 1 / len(bin_data))  # Чем меньше данных, тем меньший тестовый набор до определенного
                 # предела 3 обьекта в бине, потом, при большем количестве данных будет меньше тестовый набор
-
-
-
-
 
                 # Розмір тестової вибірки 10%
                 test_size = 0.1
@@ -221,24 +174,22 @@ class ClusterAnalysis:
 
         train_ages = pd.DataFrame()
         test_ages = pd.DataFrame()
-        
+
         if age_bins:
-           train_data, test_data, train_ages, test_ages = self.split_on_train_and_test_datasets_based_on_age_bins(data)
+            train_data, test_data, train_ages, test_ages = self.split_on_train_and_test_datasets_based_on_age_bins(data)
 
         else:
             train_data, test_data, train_ages, test_ages = self.split_on_train_and_test_datasets_without_bins(data)
 
         # Сбрасываем индексыб, не нужно!!!
-        #train_data = train_data.reset_index(drop=True)
-        #test_data = test_data.reset_index(drop=True)
+        # train_data = train_data.reset_index(drop=True)
+        # test_data = test_data.reset_index(drop=True)
 
         train_data = train_data.sort_index()
         test_data = test_data.sort_index()
 
         train_ages = train_ages.sort_index()
         test_ages = test_ages.sort_index()
-
-
 
         print("Training data:")
         print(train_data)
@@ -247,12 +198,56 @@ class ClusterAnalysis:
 
         return train_data, test_data, train_ages, test_ages
 
+        # print(self.data['AgeBin'])
 
-        #print(self.data['AgeBin'])
-
-        #X_train, X_test, y_train, y_test = train_test_split(self.train_data_selected_features, self.train_ages.iloc[:,0],
+        # X_train, X_test, y_train, y_test = train_test_split(self.train_data_selected_features, self.train_ages.iloc[:,0],
         #                                                    test_size=0.2, random_state=42, stratify=self.train_ages.iloc[:,0])
-        #print(X_train)
+        # print(X_train)
+
+
+class ClusterAnalysis:
+
+    def features_determinator(self, version, datasettype):
+        pass
+
+    def __init__ (self, ):
+        """Constructor for cluster analysis
+
+        :param path: path to file with database
+        :param sex:  sex of persons in database
+        :param is_hight_correlated_features:
+        :param datasettype: type of dataset
+        """
+
+
+
+
+
+
+        # Biomarkers sfs = selected feature set
+        self.train_data_scaled = self.scale(self.train_data.values)
+        self.test_data_scaled = self.scale(self.test_data.values)
+
+        # train_ages_scaled = std_scaler.fit_transform(self.train_ages.values)
+        # test_ages_scaled = std_scaler.fit_transform(self.test_ages.values)
+        #self.train_data_sfs_scaled, self.test_data_sfs_scaled, self.train_ages_scaled, self.test_ages_scaled = (
+        #    self.scale(self.train_data, self.test_data, self.train_ages, self.test_ages))
+
+
+    def scale (self, dataframe):
+        """Scaling method
+
+        :param dataframe: dataframe to scale
+        :return: scaled_data
+        """
+        # Scaling
+
+        std_scaler = StandardScaler()
+        data_scaled = std_scaler.fit_transform(dataframe)
+
+        return data_scaled
+        
+
 
 
 
@@ -392,15 +387,21 @@ class ClusterAnalysis:
 
         return kmeans.cluster_centers_, kmeans.labels_
 
+    def biological_age_of_clusters(self):
+        centers,labels = self.kmeans_clustering_factory()
+        indexes = self.indexes_of_persons_of_each_cluster(labels)
+        clusters_bio_age = self.biological_age_of_each_cluster(self.train_ages, indexes)
 
+        print(indexes)
+        print(clusters_bio_age)
 
-    def kmeans_clustering_factory(self):
+    def kmeans_clustering_factory(self, data):
         """OK"""
 
         """Доробити алгоритм k-means"""
 
         # Змінній data присвоюється значення масштабованого датафрейму з тренувальної вибірки
-        data = self.train_data_scaled
+        #data = self.train_data_scaled
 
         # Ініціюємо змінну clusters_number нулем
         clusters_number = 0
@@ -422,6 +423,11 @@ class ClusterAnalysis:
         # людей кластерам
         centers, labels = self.kmeans_clustering(data, clusters_number)
 
+        pl.plot_pca(data, labels, centers, show_ages=True)
+
+        return centers, labels
+
+
         """
         classes_number = len(set(labels))
         persons_number = len(labels)
@@ -433,13 +439,7 @@ class ClusterAnalysis:
         """
 
 
-        indexes = self.indexes_of_persons_of_each_cluster(labels)
-        clusters_bio_age = self.biological_age_of_each_cluster(self.train_ages, indexes)
 
-        print(indexes)
-        print(clusters_bio_age)
-
-        pl.plot_pca(data, labels, centers, show_ages=True)
 
         # indexes = self.clusters_patient_indexes(kmeans.labels_)
         # self.clusters_bio_age(self.train_ages, indexes)
@@ -865,13 +865,20 @@ class ClusterAnalysis:
         plt.show()
 
 
-def load_bio_age_dataset(path, version, sex, hight_correlated_features=None, datasettype=ie.DatasetType.Biochemistry):
-    # First attribute - Age
+def load_biomarkers_dataset(path, version, datasettype, sex, hight_correlated_features=False):
+
+
+    # First attribute - age
     dataset_attributes = ['age']
 
     if version == ie.GERONTOLOGY.NEW and datasettype == ie.DatasetType.Biochemistry:
         # Add all attributes from biochemistry
-        dataset_attributes.extend((ft.gerontology_biochemistry_all))
+        if hight_correlated_features == False:
+            # Select feature labels that hight correlates with age
+            dataset_attributes.extend((ft.gerontology_biochemistry_both_versions))
+            dataset_attributes.extend((ft.gerontology_biochemistry_new_additionally))
+
+
 
         print("All features: " + str(ft.gerontology_biochemistry_all))
 
@@ -883,9 +890,16 @@ def load_bio_age_dataset(path, version, sex, hight_correlated_features=None, dat
 
     elif version == ie.GERONTOLOGY.NEW and datasettype == ie.DatasetType.Gemogramma:
         # Add all attributes from gematology
-        dataset_attributes.extend(ft.gerontology_gematology_all)
+        if hight_correlated_features == False:
+            dataset_attributes.extend((ft.gerontology_gematology_all))
+            print("All features: " + str(ft.gerontology_gematology_all))
 
-        print("All features: " + str(ft.gerontology_gematology_all))
+        else:
+            # Select feature labels that hight correlates with age
+            dataset_attributes.extend(ft.gerontology_gematology_hight_correlation_with_age)
+            print("Selected features: " + str(ft.gerontology_gematology_hight_correlation_with_age))
+
+
 
     elif version == ie.NHANES.NHANES3_HDTrain and datasettype == ie.DatasetType.Biochemistry:
         # Add all attributes from NHANES biochemistry
@@ -898,7 +912,7 @@ def load_bio_age_dataset(path, version, sex, hight_correlated_features=None, dat
     try:
         data = pd.read_excel(path,
                                   sheet_name=sex.name,
-                                  names=dataset_attributes)
+                                  usecols=dataset_attributes)
 
         print('Data was imported!')
 
@@ -906,17 +920,8 @@ def load_bio_age_dataset(path, version, sex, hight_correlated_features=None, dat
         print('File was not found!')
         sys.exit(1)
 
-    # Selected biomarkers
-    selected_biomarkers = None
 
-    if hight_correlated_features != None:
-        # Select feature labels that hight correlates with age
-        selected_biomarkers = ['age']
-        selected_biomarkers.extend(hight_correlated_features)
-    else:
-        selected_biomarkers = dataset_attributes
-
-    selected_data = data.loc[:, selected_biomarkers]
+    return data
 
 if __name__ == '__main__':
     """
@@ -973,21 +978,25 @@ if __name__ == '__main__':
     sex = ie.Sex.Male
     """
 
-    #path_to_dataset = fr'../datasets/{provider.name}/{version.name}/Excel/Filled empty/{type.name.lower()}_filled_empty_by_polynomial_method.xlsx'
+    #path_to_dataset = fr'../datasets/{provider.name}/{version.name}
+    # Excel/Filled empty/{type.name.lower()}_filled_empty_by_polynomial_method.xlsx'
 
     iris = datasets.load_iris()
-
     print(iris)
     df = pd.DataFrame(data=iris.data, columns=iris.feature_names)
     print(df)
 
-    #print(df.head())
 
+    #print(df.head())
     pl.plot_pca(df)
 
+    ClAnalysisIris = ClusterAnalysis(df)
+    scaled = ClAnalysisIris.scale(df)
+    ClAnalysisIris.kmeans_clustering_factory(scaled)
 
-    #ClAnalysisGematologyMale = ClusterAnalysis(path_to_dataset, version, sex,
-    #                                 ft.gerontology_gematology_hight_correlation_with_age, type)
+
+    #dataframe = load_biomarkers_dataset(path_to_dataset, version, type, sex, True)
+    #ClAnalysisGematologyMale = ClusterAnalysis(dataframe)
 
 
     #ClAnalysisGematologyMale.ages_distribution()
