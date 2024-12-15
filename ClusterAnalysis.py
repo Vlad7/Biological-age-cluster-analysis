@@ -22,7 +22,7 @@ import dataset_info as ie
 
 from sklearn import datasets
 
-class BiologicalAge:
+class ClusterBiologicalAgeEstimator:
 
     def __init__ (self, dataframe):
 
@@ -37,6 +37,17 @@ class BiologicalAge:
         # Train ages
         print("Training ages:")
         print(self.train_ages)
+
+        cluster_analisis = ClusterAnalysis()
+
+        # Biomarkers sfs = selected feature set
+        self.train_data_scaled = cluster_analisis.scale(self.train_data.values)
+        self.test_data_scaled = cluster_analisis.scale(self.test_data.values)
+
+        # train_ages_scaled = std_scaler.fit_transform(self.train_ages.values)
+        # test_ages_scaled = std_scaler.fit_transform(self.test_ages.values)
+        # self.train_data_sfs_scaled, self.test_data_sfs_scaled, self.train_ages_scaled, self.test_ages_scaled = (
+        #    self.scale(self.train_data, self.test_data, self.train_ages, self.test_ages))
 
     def move_age_bin_column_to_after_age_position(self, data):
         """Move age bin column from the end to position after age
@@ -204,56 +215,6 @@ class BiologicalAge:
         #                                                    test_size=0.2, random_state=42, stratify=self.train_ages.iloc[:,0])
         # print(X_train)
 
-
-class ClusterAnalysis:
-
-    def features_determinator(self, version, datasettype):
-        pass
-
-    def __init__ (self, ):
-        """Constructor for cluster analysis
-
-        :param path: path to file with database
-        :param sex:  sex of persons in database
-        :param is_hight_correlated_features:
-        :param datasettype: type of dataset
-        """
-
-
-
-
-
-
-        # Biomarkers sfs = selected feature set
-        self.train_data_scaled = self.scale(self.train_data.values)
-        self.test_data_scaled = self.scale(self.test_data.values)
-
-        # train_ages_scaled = std_scaler.fit_transform(self.train_ages.values)
-        # test_ages_scaled = std_scaler.fit_transform(self.test_ages.values)
-        #self.train_data_sfs_scaled, self.test_data_sfs_scaled, self.train_ages_scaled, self.test_ages_scaled = (
-        #    self.scale(self.train_data, self.test_data, self.train_ages, self.test_ages))
-
-
-    def scale (self, dataframe):
-        """Scaling method
-
-        :param dataframe: dataframe to scale
-        :return: scaled_data
-        """
-        # Scaling
-
-        std_scaler = StandardScaler()
-        data_scaled = std_scaler.fit_transform(dataframe)
-
-        return data_scaled
-        
-
-
-
-
-
-
-
     def ages_distribution(self, rounded_intervals=True):
 
         if rounded_intervals:
@@ -303,8 +264,6 @@ class ClusterAnalysis:
 
             # Можливо зробити, щоб виводилися дані про частотність у цьому випадку.
 
-
-
     def biological_age (self, analysis):
 
         # Add normalisation for biomarkers !!!!!!!!!!!!!!!!!!!!!!
@@ -321,15 +280,89 @@ class ClusterAnalysis:
     ###################################################################
     ###################################################################
     ###################################################################
-   
+
+    #####################################################################################################
+    ############################## K-means biological age detection #####################################
+    #####################################################################################################
+
+    def indexes_of_persons_of_each_cluster(self, labels):
+
+        """ Find list of persons indexes for each cluster
+
+            input:
+                - labels - list with class labels for each person as index
+                            and element as class label
+                    example: [ 1 0 2 0 1 0 2]
+
+            output:
+
+                - dictionary with indexes of persons in each claster from
+                    example {1: [0, 2, 3], 2: [1, 4, 5, 6], 3: [7, 8, 9, 10]}
+        """
+        unique_classes = np.unique(labels)
+
+        # The fromkeys() method returns a dictionary with the specified
+        # keys and the specified value ([] for each key in this case).
+
+        indexes_of_persons_in_each_cluster = dict.fromkeys(unique_classes, [])
+
+        for index, cluster_number in enumerate(labels):
+            indexes_of_persons_in_each_cluster[cluster_number].append(index)
+
+        return indexes_of_persons_in_each_cluster
+
+    def biological_age_of_each_cluster(self, ages_train_dataframe, indexes_of_persons_in_each_cluster):
+
+        """ Mean ariphmetic biological age for each cluster
+
+            input:
+                ages_train_dataframe - dataframe only with ages from train set
+                indexes_of_persons_in_each_cluster - dictionary with indexes of
+                                                        persons in each claster
+
+            output:
+                dictionary with biological age of each cluster
+                """
+
+        biological_age_of_each_cluster_dictionary = {}
+
+        for cluster_number in indexes_of_persons_in_each_cluster.keys():
+
+            summ = 0
+
+            persons_indexes = indexes_of_persons_in_each_cluster[cluster_number]
+
+            for person_index in persons_indexes:
+                # summ += ages_train_dataframe['Age'].values[person_index]
+                summ += ages_train_dataframe.values[person_index]
+
+            summ = summ / len(persons_indexes)
+
+            biological_age_of_each_cluster_dictionary[cluster_number] = summ
+
+        return biological_age_of_each_cluster_dictionary
 
 
+class ClusterAnalysis:
 
+    def features_determinator(self, version, datasettype):
+        pass
 
+    def __init__ (self):
+       pass
 
+    def scale (self, dataframe):
+        """Scaling method
 
+        :param dataframe: dataframe to scale
+        :return: scaled_data
+        """
+        # Scaling
 
+        std_scaler = StandardScaler()
+        data_scaled = std_scaler.fit_transform(dataframe)
 
+        return data_scaled
 
 
     ###################################################################
@@ -423,20 +456,22 @@ class ClusterAnalysis:
         # людей кластерам
         centers, labels = self.kmeans_clustering(data, clusters_number)
 
-        pl.plot_pca(data, labels, centers, show_ages=True)
+
+
+        """
+            classes_number = len(set(labels))
+            persons_number = len(labels)
+
+            u = np.zeros((classes_number, persons_number))
+
+            for i in range(len(labels)):
+                u[labels[i]][i] = 1
+            """
 
         return centers, labels
 
 
-        """
-        classes_number = len(set(labels))
-        persons_number = len(labels)
 
-        u = np.zeros((classes_number, persons_number))
-
-        for i in range(len(labels)):
-            u[labels[i]][i] = 1
-        """
 
 
 
@@ -461,69 +496,7 @@ class ClusterAnalysis:
         visualizer.show()        # Finalize and render the figure
 
 
-    #####################################################################################################
-    ############################## K-means biological age detection #####################################
-    #####################################################################################################
 
-    def indexes_of_persons_of_each_cluster (self, labels):
-
-        """ Find list of persons indexes for each cluster
-
-            input:
-                - labels - list with class labels for each person as index
-                            and element as class label
-                    example: [ 1 0 2 0 1 0 2]
-
-            output:
-
-                - dictionary with indexes of persons in each claster from
-                    example {1: [0, 2, 3], 2: [1, 4, 5, 6], 3: [7, 8, 9, 10]}
-        """
-        unique_classes = np.unique(labels)
-
-        # The fromkeys() method returns a dictionary with the specified
-        # keys and the specified value ([] for each key in this case).
-
-        indexes_of_persons_in_each_cluster = dict.fromkeys(unique_classes, [])
-
-        for index, cluster_number in enumerate(labels):
-
-            indexes_of_persons_in_each_cluster[cluster_number].append(index)
-
-        return indexes_of_persons_in_each_cluster
-
-
-    def biological_age_of_each_cluster(self, ages_train_dataframe, indexes_of_persons_in_each_cluster):
-        
-        """ Mean ariphmetic biological age for each cluster
-
-            input:
-                ages_train_dataframe - dataframe only with ages from train set
-                indexes_of_persons_in_each_cluster - dictionary with indexes of
-                                                        persons in each claster
-
-            output:
-                dictionary with biological age of each cluster
-                """
-        
-        biological_age_of_each_cluster_dictionary = {}
-        
-        for cluster_number in indexes_of_persons_in_each_cluster.keys():
-
-            summ = 0
-
-            persons_indexes = indexes_of_persons_in_each_cluster[cluster_number]
-
-            for person_index in persons_indexes:
-                # summ += ages_train_dataframe['Age'].values[person_index]
-                summ +=ages_train_dataframe.values[person_index]
-
-            summ = summ / len(persons_indexes)
-
-            biological_age_of_each_cluster_dictionary[cluster_number] = summ
-
-
-        return biological_age_of_each_cluster_dictionary
        
             
       
@@ -866,10 +839,17 @@ class ClusterAnalysis:
 
 
 def load_biomarkers_dataset(path, version, datasettype, sex, hight_correlated_features=False):
+    """Constructor for cluster analysis
 
+           :param path: path to file with database
+           :param sex:  sex of persons in database
+           :param is_hight_correlated_features:
+           :param datasettype: type of dataset
+           """
 
     # First attribute - age
     dataset_attributes = ['age']
+    method = "_filled_empty_by_"
 
     if version == ie.GERONTOLOGY.NEW and datasettype == ie.DatasetType.Biochemistry:
         # Add all attributes from biochemistry
@@ -878,15 +858,18 @@ def load_biomarkers_dataset(path, version, datasettype, sex, hight_correlated_fe
             dataset_attributes.extend((ft.gerontology_biochemistry_both_versions))
             dataset_attributes.extend((ft.gerontology_biochemistry_new_additionally))
 
+            print("All features: " + str(ft.gerontology_biochemistry_both_versions +
+                                         ft.gerontology_biochemistry_new_additionally))
 
-
-        print("All features: " + str(ft.gerontology_biochemistry_all))
+        method += "linear"
 
     elif version == ie.GERONTOLOGY.NEW and datasettype == ie.DatasetType.Bones:
         # Add all attributes from bones
         dataset_attributes.extend((ft.gerontology_bones_all))
 
         print("All features: " + str(ft.gerontology_bones_all))
+
+        method += "polynomial"
 
     elif version == ie.GERONTOLOGY.NEW and datasettype == ie.DatasetType.Gemogramma:
         # Add all attributes from gematology
@@ -899,6 +882,7 @@ def load_biomarkers_dataset(path, version, datasettype, sex, hight_correlated_fe
             dataset_attributes.extend(ft.gerontology_gematology_hight_correlation_with_age)
             print("Selected features: " + str(ft.gerontology_gematology_hight_correlation_with_age))
 
+        method += "polynomial"
 
 
     elif version == ie.NHANES.NHANES3_HDTrain and datasettype == ie.DatasetType.Biochemistry:
@@ -907,8 +891,12 @@ def load_biomarkers_dataset(path, version, datasettype, sex, hight_correlated_fe
 
         print("All features: " + str(ft.NHANES3_HDTrain_biochemistry_selected))
 
+        method += "polynomial"
+
     data = None
 
+    path = path+method+"_method.xlsx"
+    print(path)
     try:
         data = pd.read_excel(path,
                                   sheet_name=sex.name,
@@ -922,6 +910,48 @@ def load_biomarkers_dataset(path, version, datasettype, sex, hight_correlated_fe
 
 
     return data
+
+def test_1():
+    iris = datasets.load_iris()
+    print(iris)
+    df = pd.DataFrame(data=iris.data, columns=iris.feature_names)
+    print(df)
+
+    # print(df.head())
+    pl.plot_pca(df)
+
+    ClAnalysisIris = ClusterAnalysis()
+    scaled = ClAnalysisIris.scale(df)
+    ClAnalysisIris.kmeans_clustering_factory(scaled)
+
+def test_2():
+
+    provider = ie.Provider.GERONTOLOGY
+    version = ie.GERONTOLOGY.NEW
+    type = ie.DatasetType.Biochemistry
+    sex = ie.Sex.Both_sexes
+
+    path_to_dataset = fr'../datasets/{provider.name}/{version.name}/Excel/Filled empty/{type.name.lower()}'
+
+    dataframe = load_biomarkers_dataset(path_to_dataset, version, type, sex, False)
+
+    bae = ClusterBiologicalAgeEstimator(dataframe)
+
+    ClAnalysisBiochemistryBoth = ClusterAnalysis()
+    scaled = ClAnalysisBiochemistryBoth.scale(bae.train_data)
+    pl.plot_pca(scaled)
+    # print(ClAnalysis.train_data_selected_features_set_scaled)
+    # ClAnalysisMale.minimal_spanning_tree_clustering()
+    centers, labels = ClAnalysisBiochemistryBoth.kmeans_clustering_factory(scaled)
+    pl.plot_pca(scaled, labels, centers, show_ages=True)
+
+    indexes = bae.indexes_of_persons_of_each_cluster(labels)
+    print(indexes)
+    bio_age = bae.biological_age_of_each_cluster(bae.train_data, indexes)
+    print(bio_age)
+
+
+    # ClAnalysisBiochemistryBoth.cmeans_factory()
 
 if __name__ == '__main__':
     """
@@ -950,12 +980,7 @@ if __name__ == '__main__':
     plt.show()
     """
 
-    """
-    provider = ie.Provider.GERONTOLOGY
-    version = ie.GERONTOLOGY.NEW
-    type = ie.DatasetType.Biochemistry
-    sex = ie.Sex.Both_sexes
-    """
+
 
     """
     provider = ie.Provider.GERONTOLOGY
@@ -964,12 +989,12 @@ if __name__ == '__main__':
     sex = ie.Sex.Male
     """
 
-
+    """
     provider = ie.Provider.GERONTOLOGY
     version = ie.GERONTOLOGY.NEW  
     type = ie.DatasetType.Gemogramma
     sex = ie.Sex.Male
-
+    """
 
     """
     provider = ie.Provider.NHANES
@@ -978,21 +1003,10 @@ if __name__ == '__main__':
     sex = ie.Sex.Male
     """
 
-    #path_to_dataset = fr'../datasets/{provider.name}/{version.name}
-    # Excel/Filled empty/{type.name.lower()}_filled_empty_by_polynomial_method.xlsx'
-
-    iris = datasets.load_iris()
-    print(iris)
-    df = pd.DataFrame(data=iris.data, columns=iris.feature_names)
-    print(df)
+    test_2()
 
 
-    #print(df.head())
-    pl.plot_pca(df)
 
-    ClAnalysisIris = ClusterAnalysis(df)
-    scaled = ClAnalysisIris.scale(df)
-    ClAnalysisIris.kmeans_clustering_factory(scaled)
 
 
     #dataframe = load_biomarkers_dataset(path_to_dataset, version, type, sex, True)
@@ -1015,13 +1029,7 @@ if __name__ == '__main__':
     #ClAnalysisMale.kmeans_clustering_factory()
     #ClAnalysisMale.cmeans_factory()
 
-    #ClAnalysisBiochemistryBoth = ClusterAnalysis(path_to_dataset, version, sex,None, type)
-    #ClAnalysisBiochemistryBoth.scale()
-    #pl.plot_pca(ClAnalysisBiochemistryBoth.train_data_scaled)
-    #print(ClAnalysis.train_data_selected_features_set_scaled)
-    #ClAnalysisMale.minimal_spanning_tree_clustering()
-    #ClAnalysisBiochemistryBoth.kmeans_clustering_factory()
-    #ClAnalysisBiochemistryBoth.cmeans_factory()
+
 
     #ClAnalysisNHANESBiochemistry = ClusterAnalysis(path_to_NHANES_biochemistry, ie.NHANES.NHANES3_HDTrain, ie.Sex.Male, None, ie.DatasetType.Biochemistry)
     #ClAnalysisFemale = ClusterAnalysis(r'datasets/gemogramma_filled_empty_by_polynomial_method_3.xlsx', 'Female')
