@@ -838,14 +838,17 @@ class ClusterAnalysis:
         plt.show()
 
 
-def load_biomarkers_dataset(path, version, datasettype, sex, hight_correlated_features=False):
-    """Constructor for cluster analysis
+def load_dataset_with_biomarkers(provider, version, datasettype, sex, hight_correlated_features=False):
+    """Function for loading dataframe
 
            :param path: path to file with database
            :param sex:  sex of persons in database
            :param is_hight_correlated_features:
            :param datasettype: type of dataset
            """
+
+    path_to_dataset = fr'../datasets/{provider.name}/{version.name}/Excel/Filled empty/{datasettype.name.lower()}'
+
 
     # First attribute - age
     dataset_attributes = ['age']
@@ -895,7 +898,7 @@ def load_biomarkers_dataset(path, version, datasettype, sex, hight_correlated_fe
 
     data = None
 
-    path = path+method+"_method.xlsx"
+    path = path_to_dataset+method+"_method.xlsx"
     print(path)
     try:
         data = pd.read_excel(path,
@@ -931,26 +934,52 @@ def test_2():
     type = ie.DatasetType.Biochemistry
     sex = ie.Sex.Both_sexes
 
-    path_to_dataset = fr'../datasets/{provider.name}/{version.name}/Excel/Filled empty/{type.name.lower()}'
+    bio_age_estimating(provider, version, type, sex, False)
 
-    dataframe = load_biomarkers_dataset(path_to_dataset, version, type, sex, False)
+def test_3():
 
-    bae = ClusterBiologicalAgeEstimator(dataframe)
+    provider = ie.Provider.GERONTOLOGY
+    version = ie.GERONTOLOGY.NEW
+    type = ie.DatasetType.Bones
+    sex = ie.Sex.Male
 
-    ClAnalysisBiochemistryBoth = ClusterAnalysis()
-    scaled = ClAnalysisBiochemistryBoth.scale(bae.train_data)
+    bio_age_estimating(provider, version, type, sex, False)
+
+def test_4():
+
+    provider = ie.Provider.GERONTOLOGY
+    version = ie.GERONTOLOGY.NEW
+    type = ie.DatasetType.Gemogramma
+    sex = ie.Sex.Male
+
+    bio_age_estimating(provider, version, type, sex, False)
+
+def test_5():
+
+    provider = ie.Provider.NHANES
+    version = ie.NHANES.NHANES3_HDTrain
+    type = ie.DatasetType.Biochemistry
+    sex = ie.Sex.Male
+
+
+def bio_age_estimating(provider, version, type, sex, hcf):
+
+    dataframe = load_dataset_with_biomarkers(provider, version, type, sex, hcf)
+
+    cbae = ClusterBiologicalAgeEstimator(dataframe)
+
+    ClAnalysis = ClusterAnalysis()
+    scaled = ClAnalysis.scale(cbae.train_data)
     pl.plot_pca(scaled)
     # print(ClAnalysis.train_data_selected_features_set_scaled)
     # ClAnalysisMale.minimal_spanning_tree_clustering()
-    centers, labels = ClAnalysisBiochemistryBoth.kmeans_clustering_factory(scaled)
+    centers, labels = ClAnalysis.kmeans_clustering_factory(scaled)
     pl.plot_pca(scaled, labels, centers, show_ages=True)
 
-    indexes = bae.indexes_of_persons_of_each_cluster(labels)
+    indexes = cbae.indexes_of_persons_of_each_cluster(labels)
     print(indexes)
-    bio_age = bae.biological_age_of_each_cluster(bae.train_data, indexes)
+    bio_age = cbae.biological_age_of_each_cluster(cbae.train_data, indexes)
     print(bio_age)
-
-
     # ClAnalysisBiochemistryBoth.cmeans_factory()
 
 if __name__ == '__main__':
@@ -982,26 +1011,10 @@ if __name__ == '__main__':
 
 
 
-    """
-    provider = ie.Provider.GERONTOLOGY
-    version = ie.GERONTOLOGY.NEW  
-    type = ie.DatasetType.Bones
-    sex = ie.Sex.Male
-    """
 
-    """
-    provider = ie.Provider.GERONTOLOGY
-    version = ie.GERONTOLOGY.NEW  
-    type = ie.DatasetType.Gemogramma
-    sex = ie.Sex.Male
-    """
 
-    """
-    provider = ie.Provider.NHANES
-    version = ie.NHANES.NHANES3_HDTrain 
-    type = ie.DatasetType.Biochemistry
-    sex = ie.Sex.Male
-    """
+
+
 
     test_2()
 
